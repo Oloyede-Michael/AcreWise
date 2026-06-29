@@ -1,0 +1,51 @@
+# src/main/resources/graphql/schema.graphqls
+
+type Customer {
+    id: ID!
+    name: String!
+    email: String!
+    phone: String!
+    paymentMethods: [PaymentMethod!]!
+}
+
+type PaymentMethod {
+    id: ID!
+    customerId: ID!
+    last4: String!
+    expiryMonth: Int!
+    expiryYear: Int!
+    isPrimary: Boolean!
+}
+
+type Plan {
+    id: ID!
+    name: String!
+    amount: Float!
+    frequency: String!
+}
+
+type Subscription {
+    id: ID!
+    customer: Customer!
+    plan: Plan!
+    status: String!
+    nextBillingDate: String!
+}
+
+type Query {
+    getMerchantPlans: [Plan!]!
+    getSubscription(id: ID!): Subscription
+}
+
+input CreatePlanInput {
+    name: String!
+    amount: Float!
+    frequency: String!
+}
+
+type Mutation {
+    createPlan(input: CreatePlanInput!): Plan!
+    pauseSubscription(id: ID!): Subscription!
+    resumeSubscription(id: ID!): Subscription!
+    cancelSubscription(id: ID!): Subscription!
+}

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.autocollect.reflow.grpc";
+option java_outer_classname = "RecoveryProto";
+
+package recovery;
+
+// The Core Subscription Recovery Engine microservice interface contract
+service RecoveryService {
+    // Spins up an isolated dunning loop sequence for a specific failed payment attempt
+    rpc TriggerSmartRetry (RetryRequest) returns (RetryResponse);
+    
+    // Checks active system states to compute dynamic fallback balances or alternatives
+    rpc EvaluateAccountStanding (AccountRequest) returns (AccountResponse);
+}
+
+message RetryRequest {
+    string subscription_id = 1;
+    string payment_attempt_id = 2;
+    string failure_reason = 3;
+    int32 attempt_number = 4;
+    double original_amount = 5;
+}
+
+message RetryResponse {
+    string status = 1;          // PENDING, EXECUTED, ABANDONED
+    string resolution = 2;      // SUCCESS, RE-SCHEDULED, MAX_ATTEMPTS_EXHAUSTED
+    double final_amount_charged = 3;
+    string next_retry_timestamp = 4;
+}
+
+message AccountRequest {
+    string customer_id = 1;
+}
+
+message AccountResponse {
+    bool has_backup_methods = 1;
+    string primary_token_status = 2; // VALID, EXPIRED, BLOCKED
+    int32 total_saved_cards = 3;
+}
