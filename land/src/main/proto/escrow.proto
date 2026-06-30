@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.acrewise.land.grpc";
+option java_outer_classname = "EscrowProto";
+
+package escrow;
+
+// The AcreWise Escrow Service microservice contract
+service EscrowService {
+    // Places transaction amount under escrow
+    rpc Hold (HoldRequest) returns (HoldResponse);
+    
+    // Releases held escrow funds to the landlord/seller
+    rpc Release (ReleaseRequest) returns (ReleaseResponse);
+    
+    // Refunds held escrow funds to the tenant/buyer
+    rpc Refund (RefundRequest) returns (RefundResponse);
+}
+
+message HoldRequest {
+    string property_id = 1;
+    string buyer_id = 2;
+    double amount = 3;
+    string nomba_virtual_account_id = 4;
+}
+
+message HoldResponse {
+    string id = 1;
+    string status = 2;          // HELD, RELEASED, REFUNDED
+    double amount_held = 3;
+}
+
+message ReleaseRequest {
+    string escrow_transaction_id = 1;
+}
+
+message ReleaseResponse {
+    string escrow_transaction_id = 1;
+    string status = 2;          // RELEASED
+    string transfer_reference = 3;
+}
+
+message RefundRequest {
+    string escrow_transaction_id = 1;
+}
+
+message RefundResponse {
+    string escrow_transaction_id = 1;
+    string status = 2;          // REFUNDED
+    string transfer_reference = 3;
+}

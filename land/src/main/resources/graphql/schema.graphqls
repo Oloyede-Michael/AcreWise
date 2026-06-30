@@ -1,0 +1,98 @@
+# src/main/resources/graphql/schema.graphqls
+
+type Landlord {
+    id: ID!
+    name: String!
+    email: String!
+    phone: String!
+    createdAt: String
+}
+
+type Property {
+    id: ID!
+    landlord: Landlord!
+    title: String!
+    type: String!
+    status: String!
+    verificationStatus: String!
+    createdAt: String
+}
+
+type Tenancy {
+    id: ID!
+    property: Property!
+    tenantId: ID!
+    rentAmount: Float!
+    frequency: String!
+    nextDueDate: String!
+    balance: Float!
+    nombaVirtualAccountId: String!
+    createdAt: String
+}
+
+type RentPayment {
+    id: ID!
+    tenancy: Tenancy
+    amount: Float!
+    nombaReference: String!
+    matchedStatus: String!
+    receivedAt: String!
+    createdAt: String
+}
+
+type EscrowTransaction {
+    id: ID!
+    property: Property!
+    buyerId: ID!
+    amountHeld: Float!
+    status: String!
+    nombaVirtualAccountId: String!
+    releasedAt: String
+    createdAt: String
+}
+
+# Replicated Plan and Subscription types from subscription service for compliance
+type Plan {
+    id: ID!
+    name: String!
+    amount: Float!
+    frequency: String!
+}
+
+type Subscription {
+    id: ID!
+    status: String!
+}
+
+type Query {
+    # Component D requirements
+    getMerchantPlans: [Plan!]!
+    getSubscription(id: ID!): Subscription
+    getUnmatchedQueue: [RentPayment!]!
+
+    # AcreWise Specific Queries
+    getProperties: [Property!]!
+    getProperty(id: ID!): Property
+    getTenancies: [Tenancy!]!
+    getTenancy(id: ID!): Tenancy
+    getEscrowTransactions: [EscrowTransaction!]!
+}
+
+input CreatePlanInput {
+    name: String!
+    amount: Float!
+    frequency: String!
+}
+
+type Mutation {
+    # Component D requirements
+    pauseSubscription(id: ID!): Subscription!
+    resumeSubscription(id: ID!): Subscription!
+    createPlan(input: CreatePlanInput!): Plan!
+
+    # AcreWise Specific Mutations
+    createLandlord(name: String!, email: String!, phone: String!): Landlord!
+    createProperty(landlordId: ID!, title: String!, type: String!, status: String!): Property!
+    createTenancy(propertyId: ID!, tenantId: ID!, rentAmount: Float!, frequency: String!, nextDueDate: String!, nombaVirtualAccountId: String!): Tenancy!
+    createEscrowTransaction(propertyId: ID!, buyerId: ID!, amountHeld: Float!, nombaVirtualAccountId: String!): EscrowTransaction!
+}
