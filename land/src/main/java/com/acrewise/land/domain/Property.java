@@ -33,6 +33,36 @@ public class Property {
     @Column(name = "verification_status", nullable = false)
     private String verificationStatus; // PENDING, VERIFIED, FLAGGED
 
+    @Column(name = "meter_number")
+    private String meterNumber;
+
+    @Column(name = "meter_provider")
+    private String meterProvider;
+
+    @Column(name = "area")
+    private String area;
+
+    @Column(name = "building_type")
+    private String buildingType;
+
+    @Column(name = "price")
+    private java.math.BigDecimal price;
+
+    @Column(name = "caretaker_name")
+    private String caretakerName;
+
+    @Column(name = "caretaker_email")
+    private String caretakerEmail;
+
+    @Column(name = "caretaker_phone")
+    private String caretakerPhone;
+
+    @Column(name = "total_units")
+    private Integer totalUnits;
+
+    @Column(name = "available_units")
+    private Integer availableUnits;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -43,6 +73,12 @@ public class Property {
         }
         if (this.verificationStatus == null) {
             this.verificationStatus = "PENDING";
+        }
+        if (this.totalUnits == null) {
+            this.totalUnits = 1;
+        }
+        if (this.availableUnits == null) {
+            this.availableUnits = 1;
         }
         if (this.createdAt == null) {
             this.createdAt = Instant.now();

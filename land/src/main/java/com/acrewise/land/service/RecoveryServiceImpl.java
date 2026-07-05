@@ -48,7 +48,7 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
 
             EscrowTransaction transaction = EscrowTransaction.builder()
                     .property(property)
-                    .buyerId(UUID.fromString(request.getBuyerId()))
+                    .buyerId(request.getBuyerId())
                     .amountHeld(BigDecimal.valueOf(request.getAmount()))
                     .nombaVirtualAccountId(request.getNombaVirtualAccountId())
                     .status("HELD")

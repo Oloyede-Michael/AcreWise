@@ -24,7 +24,7 @@ public class Tenancy {
     private Property property;
 
     @Column(name = "tenant_id", nullable = false)
-    private UUID tenantId;
+    private String tenantId;
 
     @Column(name = "rent_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal rentAmount;

@@ -34,3 +34,7 @@ build/
 
 gemini/
 node_modules/
+nomba_documentation/
+postgres_data/
+*.png
+*.txt

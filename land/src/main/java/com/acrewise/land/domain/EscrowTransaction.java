@@ -23,7 +23,7 @@ public class EscrowTransaction {
     private Property property;
 
     @Column(name = "buyer_id", nullable = false)
-    private UUID buyerId;
+    private String buyerId;
 
     @Column(name = "amount_held", nullable = false, precision = 15, scale = 2)
     private BigDecimal amountHeld;

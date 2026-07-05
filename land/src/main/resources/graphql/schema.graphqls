@@ -15,6 +15,16 @@ type Property {
     type: String!
     status: String!
     verificationStatus: String!
+    meterNumber: String
+    meterProvider: String
+    area: String
+    buildingType: String
+    price: Float
+    caretakerName: String
+    caretakerEmail: String
+    caretakerPhone: String
+    totalUnits: Int
+    availableUnits: Int
     createdAt: String
 }
 
@@ -64,6 +74,33 @@ type Subscription {
     status: String!
 }
 
+type UserProfile {
+    id: ID!
+    email: String!
+    role: String!
+    name: String
+}
+
+type ChatMessage {
+    id: ID!
+    propertyId: ID!
+    senderEmail: String!
+    senderRole: String!
+    message: String!
+    createdAt: String
+}
+
+type Receipt {
+    id: ID!
+    title: String!
+    category: String!
+    amount: Float!
+    reference: String!
+    details: String
+    tenantEmail: String!
+    createdAt: String
+}
+
 type Query {
     # Component D requirements
     getMerchantPlans: [Plan!]!
@@ -76,6 +113,15 @@ type Query {
     getTenancies: [Tenancy!]!
     getTenancy(id: ID!): Tenancy
     getEscrowTransactions: [EscrowTransaction!]!
+
+    # User Profile Queries
+    getUserProfile(email: String!): UserProfile
+    
+    # Chat Messages
+    getChatMessages(propertyId: ID!): [ChatMessage!]!
+    
+    # Receipts
+    getReceipts(tenantEmail: String!): [Receipt!]!
 }
 
 input CreatePlanInput {
@@ -95,4 +141,23 @@ type Mutation {
     createProperty(landlordId: ID!, title: String!, type: String!, status: String!): Property!
     createTenancy(propertyId: ID!, tenantId: ID!, rentAmount: Float!, frequency: String!, nextDueDate: String!, nombaVirtualAccountId: String!): Tenancy!
     createEscrowTransaction(propertyId: ID!, buyerId: ID!, amountHeld: Float!, nombaVirtualAccountId: String!): EscrowTransaction!
+    linkPropertyMeter(propertyId: ID!, meterNumber: String!, meterProvider: String!): Property!
+    updatePropertyStatus(propertyId: ID!, status: String!): Property!
+
+    # User Profile Mutations
+    registerUserProfile(email: String!, name: String, role: String): UserProfile!
+    upgradeToLandlord(email: String!): UserProfile!
+    
+    # Property listing extension mutation
+    listProperty(landlordId: ID!, title: String!, type: String!, status: String!, area: String!, buildingType: String!, price: Float!, totalUnits: Int): Property!
+    decrementPropertyUnits(propertyId: ID!): Property!
+    
+    # Caretaker mapping
+    assignPropertyCaretaker(propertyId: ID!, name: String!, email: String!, phone: String!): Property!
+
+    # Chat Messages
+    sendChatMessage(propertyId: ID!, senderEmail: String!, senderRole: String!, message: String!): ChatMessage!
+
+    # Receipts creation
+    createReceipt(title: String!, category: String!, amount: Float!, reference: String!, details: String, tenantEmail: String!): Receipt!
 }

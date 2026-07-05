@@ -7,4 +7,5 @@ import java.util.UUID;
 
 @Repository
 public interface LandlordRepository extends JpaRepository<Landlord, UUID> {
+    java.util.Optional<Landlord> findByEmail(String email);
 }

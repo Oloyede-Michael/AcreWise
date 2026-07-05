@@ -26,7 +26,8 @@ spring:
 
 nomba:
   api:
-    base-url: https://sandbox.nomba.com
-    account-id: "890022ce-bae0-45c1-9b9d-ee7872e6ca27"
-    client-key: "2242b79d-f2cf-4ccc-ada1-e890bd1a9f0d"
-    secret-key: "HkatexKDZg7CLWy96q5sfrVHSvtoz92B"
+    base-url: https://api.nomba.com
+    account-id: "f666ef9b-888e-4799-85ce-acb505b28023"
+    client-key: "e5e85b13-f560-4643-814e-c87435dbbc15"
+    secret-key: "8/doS7Q3w77EANpk3vpgSrc05hhOiRWp3eBs01sXyZ1AmovtZUXlmrxie+xnEF2tR4q79t0IFufMD1d4JrkT8g=="
+    sub-account-id: "5a6c217c-010f-4c90-9517-382c9ec46595"
