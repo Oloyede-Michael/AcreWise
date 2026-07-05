@@ -7,5 +7,17 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
-  ]
+  ],
+  server: {
+    proxy: {
+      '/graphql': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      }
+    }
+  }
 })
