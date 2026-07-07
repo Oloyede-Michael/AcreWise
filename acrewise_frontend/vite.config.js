@@ -11,11 +11,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/graphql': {
-        target: 'http://localhost:8080',
+        target: 'https://acrewise-9zrp.onrender.com/graphql',
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'https://acrewise-9zrp.onrender.com/api',
         changeOrigin: true,
       }
     }

@@ -38,3 +38,4 @@ nomba_documentation/
 postgres_data/
 *.png
 *.txt
+acrewise.env
