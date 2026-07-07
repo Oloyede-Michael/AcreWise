@@ -26,6 +26,12 @@ type Property {
     totalUnits: Int
     availableUnits: Int
     createdAt: String
+    # New marketplace fields
+    imageUrl: String
+    firstPaymentAmount: Float
+    paymentFrequency: String
+    annualProjections: String
+    isAssured: Boolean
 }
 
 type Tenancy {
@@ -149,7 +155,7 @@ type Mutation {
     upgradeToLandlord(email: String!): UserProfile!
     
     # Property listing extension mutation
-    listProperty(landlordId: ID!, title: String!, type: String!, status: String!, area: String!, buildingType: String!, price: Float!, totalUnits: Int): Property!
+    listProperty(landlordId: ID!, title: String!, type: String!, status: String!, area: String!, buildingType: String!, price: Float!, totalUnits: Int, imageUrl: String, firstPaymentAmount: Float, paymentFrequency: String, annualProjections: String, ownershipDocumentUrl: String): Property!
     decrementPropertyUnits(propertyId: ID!): Property!
     
     # Caretaker mapping

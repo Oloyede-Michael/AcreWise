@@ -66,6 +66,41 @@ public class Property {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    // ── New marketplace fields ──────────────────────────────────────────────
+
+    /** Optional URL of the property photo shown on marketplace cards */
+    @Column(name = "image_url", length = 1024)
+    private String imageUrl;
+
+    /** First payment / booking amount the tenant must pay upfront */
+    @Column(name = "first_payment_amount")
+    private java.math.BigDecimal firstPaymentAmount;
+
+    /** Payment frequency selected by landlord: MONTHLY, BIANNUAL, ANNUAL */
+    @Column(name = "payment_frequency")
+    private String paymentFrequency;
+
+    /**
+     * JSON array string of annual rent projections for years 1-5.
+     * e.g. "[1200000,1300000,1400000,1500000,1600000]"
+     */
+    @Column(name = "annual_projections", length = 512)
+    private String annualProjections;
+
+    /**
+     * Private ownership document URL — never shown publicly.
+     * Presence triggers the isAssured flag.
+     */
+    @Column(name = "ownership_document_url", length = 1024)
+    private String ownershipDocumentUrl;
+
+    /**
+     * True when the landlord has submitted an ownership document
+     * and AcreWise has verified / accepted it.
+     */
+    @Column(name = "is_assured")
+    private Boolean isAssured;
+
     @PrePersist
     protected void onCreate() {
         if (this.id == null) {

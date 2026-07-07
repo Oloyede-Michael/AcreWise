@@ -282,13 +282,19 @@ public class GraphQLController {
             @Argument String area,
             @Argument String buildingType,
             @Argument Double price,
-            @Argument Integer totalUnits
+            @Argument Integer totalUnits,
+            @Argument String imageUrl,
+            @Argument Double firstPaymentAmount,
+            @Argument String paymentFrequency,
+            @Argument String annualProjections,
+            @Argument String ownershipDocumentUrl
     ) {
         log.info("GraphQL Ingress: Listing property {} for landlord {}", title, landlordId);
         Landlord landlord = landlordRepository.findById(landlordId)
                 .orElseThrow(() -> new IllegalArgumentException("Landlord not found."));
 
         int units = totalUnits != null ? totalUnits : 1;
+        boolean assured = ownershipDocumentUrl != null && !ownershipDocumentUrl.isBlank();
 
         Property property = Property.builder()
                 .landlord(landlord)
@@ -301,6 +307,12 @@ public class GraphQLController {
                 .price(BigDecimal.valueOf(price))
                 .totalUnits(units)
                 .availableUnits(units)
+                .imageUrl(imageUrl)
+                .firstPaymentAmount(firstPaymentAmount != null ? BigDecimal.valueOf(firstPaymentAmount) : null)
+                .paymentFrequency(paymentFrequency)
+                .annualProjections(annualProjections)
+                .ownershipDocumentUrl(ownershipDocumentUrl)
+                .isAssured(assured)
                 .build();
 
         return propertyRepository.save(property);

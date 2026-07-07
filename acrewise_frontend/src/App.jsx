@@ -233,8 +233,27 @@ export default function App() {
   const [meterFormProvider, setMeterFormProvider] = useState('IKEDC');
 
   // Forms
-  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567' });
+  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567', imageUrl: '', firstPaymentAmount: '', paymentFrequency: 'ANNUAL', annualProjections: ['','','','',''], ownershipDocumentUrl: '' });
   const [newTenancy, setNewTenancy] = useState({ propertyId: '', tenantId: '', rentAmount: '1200000', frequency: 'MONTHLY', nextDueDate: '2026-08-01', nombaVirtualAccountId: '' });
+
+  // Marketplace FX Converter
+  const [mktFxRate, setMktFxRate] = useState(null);
+  const [mktFxCurrency, setMktFxCurrency] = useState('USD');
+  const [mktFxLoading, setMktFxLoading] = useState(false);
+
+  const FX_CURRENCIES = ['USD','EUR','GBP','CAD','AUD','JPY','CNY','INR','ZAR','GHS'];
+
+  async function fetchMarketplaceRate(currency) {
+    setMktFxLoading(true);
+    try {
+      const res = await fetch(`https://api.frankfurter.app/latest?from=NGN&to=${currency}`);
+      const data = await res.json();
+      setMktFxRate(data.rates[currency] || null);
+    } catch { setMktFxRate(null); }
+    setMktFxLoading(false);
+  }
+
+  useEffect(() => { fetchMarketplaceRate(mktFxCurrency); }, [mktFxCurrency]);
 
   // Web Crypto HMAC-SHA256 signing utility
   async function calculateSignature(hashingPayload, secretKey) {
@@ -439,6 +458,11 @@ export default function App() {
           caretakerPhone
           totalUnits
           availableUnits
+          imageUrl
+          firstPaymentAmount
+          paymentFrequency
+          annualProjections
+          isAssured
           landlord {
             id
             name
@@ -830,12 +854,11 @@ export default function App() {
     setLoading(false);
   }
 
-  // Submit Listing Property (extended with area, buildingType, price)
+  // Submit Listing Property (extended with area, buildingType, price, image, payment schedule)
   async function handleListProperty(e) {
     e.preventDefault();
     setLoading(true);
-    
-    // First retrieve landlord ID matching user email, or register one
+
     const landlordMutation = `
       mutation {
         createLandlord(name: "${userProfile.name}", email: "${userProfile.email}", phone: "+23480000000") {
@@ -846,17 +869,24 @@ export default function App() {
     const landlordData = await fetchGraphQL(landlordMutation);
     if (landlordData && landlordData.createLandlord) {
       const landlordId = landlordData.createLandlord.id;
+      const projStr = JSON.stringify(newProp.annualProjections.map(v => parseFloat(v)||0));
+      const hasOwnerDoc = newProp.ownershipDocumentUrl && newProp.ownershipDocumentUrl.trim();
       const propMutation = `
         mutation {
           listProperty(
-            landlordId: "${landlordId}", 
-            title: "${newProp.title}", 
-            type: "${newProp.type}", 
+            landlordId: "${landlordId}",
+            title: "${newProp.title}",
+            type: "${newProp.type}",
             status: "${newProp.status}",
             area: "${newProp.area}",
             buildingType: "${newProp.buildingType}",
             price: ${parseFloat(newProp.price)},
             totalUnits: ${parseInt(newProp.totalUnits) || 1}
+            ${newProp.imageUrl ? `, imageUrl: "${newProp.imageUrl}"` : ''}
+            ${newProp.firstPaymentAmount ? `, firstPaymentAmount: ${parseFloat(newProp.firstPaymentAmount)}` : ''}
+            , paymentFrequency: "${newProp.paymentFrequency}"
+            , annualProjections: "${projStr.replace(/"/g,'\\"')}"
+            ${hasOwnerDoc ? `, ownershipDocumentUrl: "${newProp.ownershipDocumentUrl}"` : ''}
           ) {
             id
           }
@@ -865,8 +895,6 @@ export default function App() {
       const propData = await fetchGraphQL(propMutation);
       if (propData && propData.listProperty) {
         const propId = propData.listProperty.id;
-
-        // If inviting an existing tenant right away
         if (inviteTenantEmail) {
           const generatedVa = "va_" + Math.random().toString(36).substring(2, 10);
           const tenancyMutation = `
@@ -875,7 +903,7 @@ export default function App() {
                 propertyId: "${propId}",
                 tenantId: "${inviteTenantEmail.toLowerCase()}",
                 rentAmount: ${parseFloat(newProp.price)},
-                frequency: "MONTHLY",
+                frequency: "${newProp.paymentFrequency}",
                 nextDueDate: "2026-08-01",
                 nombaVirtualAccountId: "${generatedVa}"
               ) { id }
@@ -884,7 +912,6 @@ export default function App() {
           await fetchGraphQL(tenancyMutation);
           setInviteTenantEmail('');
         }
-
         setShowPropertyModal(false);
         await loadData();
       }
@@ -3320,49 +3347,138 @@ export default function App() {
               {/* Tenant Tab: Houses Marketplace */}
               {tenantTab === 'marketplace' && (
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-bold">Houses Marketplace</h3>
-                    <p className="text-zinc-400 text-sm mt-1">Explore, rent, or purchase premium property listings listed directly by verified landlords.</p>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-bold">Houses Marketplace</h3>
+                      <p className="text-zinc-400 text-sm mt-1">Explore, rent, or purchase premium property listings listed directly by verified landlords.</p>
+                    </div>
+
+                    {/* Global FX Converter Widget */}
+                    <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg font-mono text-xs shrink-0">
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-zinc-400">1 NGN =</span>
+                      {mktFxLoading ? (
+                        <span className="text-zinc-500 animate-pulse">...</span>
+                      ) : (
+                        <span className="text-white font-bold">{mktFxRate ? mktFxRate.toFixed(6) : '—'}</span>
+                      )}
+                      <select
+                        className="bg-transparent text-emerald-400 font-bold focus:outline-none cursor-pointer"
+                        value={mktFxCurrency}
+                        onChange={(e) => setMktFxCurrency(e.target.value)}
+                      >
+                        {FX_CURRENCIES.map(c => <option key={c} value={c} className="bg-zinc-900 text-white">{c}</option>)}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {properties
                       .filter(p => p.status === 'LISTED' || (p.status === 'LET' && p.availableUnits > 0))
-                      .map(p => (
-                        <div key={p.id} className="p-5 border border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 rounded-lg flex flex-col justify-between gap-4 transition font-mono text-xs">
-                          <div className="space-y-2">
-                            <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded text-[9px] uppercase tracking-wider font-bold">{p.type}</span>
-                            <h4 className="font-bold text-sm text-white font-sans truncate">{p.title}</h4>
-                            <p className="text-zinc-400 text-[11px] font-sans">Area: {p.area || "Lekki"} | building: {p.buildingType || "Apartment"}</p>
-                            <p className="text-white text-base font-extrabold font-sans">₦{p.price?.toLocaleString() || '1,200,000'}</p>
-                            <div className="text-[11px] text-zinc-400 font-sans flex items-center justify-between mt-1">
-                              <span>Rooms / Flats:</span>
-                              <span className="text-emerald-400 font-bold">{p.availableUnits != null ? p.availableUnits : 1} left</span>
+                      .map(p => {
+                        const convertedPrice = mktFxRate && p.price ? (p.price * mktFxRate).toFixed(2) : null;
+                        const projections = (() => { try { return JSON.parse(p.annualProjections || '[]'); } catch { return []; } })();
+                        return (
+                          <div key={p.id} className="border border-zinc-800 bg-zinc-900/20 hover:border-zinc-700 rounded-xl flex flex-col overflow-hidden transition group">
+
+                            {/* Property Image */}
+                            {p.imageUrl ? (
+                              <div className="relative h-44 overflow-hidden">
+                                <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" onError={(e) => e.target.parentElement.style.display='none'} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
+                                <div className="absolute top-2 left-2 flex gap-1.5">
+                                  <span className="px-2 py-0.5 bg-emerald-500/90 text-white rounded text-[9px] uppercase tracking-wider font-bold backdrop-blur">{p.type}</span>
+                                  {p.isAssured && (
+                                    <span className="px-2 py-0.5 bg-amber-500/90 text-white rounded text-[9px] uppercase tracking-wider font-bold flex items-center gap-1 backdrop-blur">
+                                      <ShieldCheck className="w-2.5 h-2.5" /> Assured
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="h-32 bg-zinc-900 flex items-center justify-center relative">
+                                <Building2 className="w-10 h-10 text-zinc-700" />
+                                <div className="absolute top-2 left-2 flex gap-1.5">
+                                  <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded text-[9px] uppercase tracking-wider font-bold">{p.type}</span>
+                                  {p.isAssured && (
+                                    <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded text-[9px] uppercase tracking-wider font-bold flex items-center gap-1">
+                                      <ShieldCheck className="w-2.5 h-2.5" /> Assured
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="p-4 flex flex-col gap-3 flex-1 font-mono text-xs">
+                              <div>
+                                <h4 className="font-bold text-sm text-white font-sans truncate">{p.title}</h4>
+                                <p className="text-zinc-400 text-[11px] font-sans mt-0.5">{p.area || 'Lagos'} · {p.buildingType || 'Apartment'}</p>
+                              </div>
+
+                              {/* Price + FX */}
+                              <div>
+                                <p className="text-white text-xl font-extrabold font-sans">₦{p.price?.toLocaleString() || '—'}</p>
+                                {convertedPrice && (
+                                  <p className="text-emerald-400 text-[11px] font-sans">≈ {mktFxCurrency} {parseFloat(convertedPrice).toLocaleString()}</p>
+                                )}
+                                {p.paymentFrequency && (
+                                  <span className="text-zinc-500 text-[10px]">per {p.paymentFrequency?.toLowerCase()}</span>
+                                )}
+                              </div>
+
+                              {/* First Payment */}
+                              {p.firstPaymentAmount && (
+                                <div className="px-2 py-1.5 bg-blue-500/5 border border-blue-500/20 rounded text-[10px] font-sans">
+                                  <span className="text-zinc-400">First payment: </span>
+                                  <span className="text-blue-400 font-bold">₦{parseFloat(p.firstPaymentAmount).toLocaleString()}</span>
+                                </div>
+                              )}
+
+                              {/* Annual Projections */}
+                              {projections.length > 0 && projections.some(v => v > 0) && (
+                                <div className="space-y-1">
+                                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5" /> 5-Year Rent Projection</p>
+                                  <div className="grid grid-cols-5 gap-1">
+                                    {projections.map((v, i) => (
+                                      <div key={i} className="text-center">
+                                        <div className="text-[8px] text-zinc-600">Yr{i+1}</div>
+                                        <div className="text-[9px] text-zinc-300 font-bold">₦{(v/1000).toFixed(0)}k</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Units left */}
+                              <div className="text-[11px] text-zinc-400 font-sans flex items-center justify-between">
+                                <span>Rooms / Flats:</span>
+                                <span className="text-emerald-400 font-bold">{p.availableUnits ?? 1} of {p.totalUnits ?? 1} available</span>
+                              </div>
+
+                              <button
+                                onClick={() => {
+                                  const tempVa = "va_market_" + Math.random().toString(36).substring(2, 10);
+                                  const mockTen = {
+                                    id: "temp_market_lease_" + p.id,
+                                    rentAmount: p.firstPaymentAmount ? parseFloat(p.firstPaymentAmount) : p.price,
+                                    nombaVirtualAccountId: tempVa,
+                                    property: p,
+                                    isMarketplacePurchase: true
+                                  };
+                                  setCheckoutTenancy(mockTen);
+                                  setCheckoutOption('exact');
+                                  setPaymentStatus(null);
+                                  setPayMethod('flash');
+                                  setShowCheckout(true);
+                                }}
+                                className="mt-auto w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
+                              >
+                                {p.type === 'RENT' ? 'Rent via Nomba' : 'Buy via Nomba Escrow'}
+                              </button>
                             </div>
                           </div>
-
-                          <button 
-                            onClick={() => {
-                              const tempVa = "va_market_" + Math.random().toString(36).substring(2, 10);
-                              const mockTen = {
-                                id: "temp_market_lease_" + p.id,
-                                rentAmount: p.price,
-                                nombaVirtualAccountId: tempVa,
-                                property: p,
-                                isMarketplacePurchase: true
-                              };
-                              setCheckoutTenancy(mockTen);
-                              setCheckoutOption('exact');
-                              setPaymentStatus(null);
-                              setPayMethod('flash');
-                              setShowCheckout(true);
-                            }}
-                            className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded font-sans transition uppercase tracking-wider text-center block"
-                          >
-                            Rent / Buy via Nomba
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                     {properties.filter(p => p.status === 'LISTED' || (p.status === 'LET' && p.availableUnits > 0)).length === 0 && (
                       <p className="text-zinc-500 text-center py-20 lg:col-span-3">No houses listed in the market catalog at this time.</p>
@@ -3370,6 +3486,7 @@ export default function App() {
                   </div>
                 </div>
               )}
+
 
               {/* Tenant Tab: Receipts Vault Locker */}
               {tenantTab === 'receipts' && (
@@ -3816,42 +3933,48 @@ export default function App() {
 
       {/* MODAL: Create & List Property Form */}
       {showPropertyModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg w-full max-w-md space-y-4">
-            <h3 className="text-lg font-bold">List Property for Rent / Sale</h3>
-            
-            <form onSubmit={handleListProperty} className="space-y-3 font-mono text-xs">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-start justify-center p-4 overflow-y-auto">
+          <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-xl w-full max-w-lg space-y-4 my-8">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-lg font-bold">List Property for Rent / Sale</h3>
+            </div>
+
+            <form onSubmit={handleListProperty} className="space-y-4 font-mono text-xs">
+
+              {/* Title */}
               <div className="space-y-1">
                 <label className="text-[10px] text-zinc-500 block uppercase">Property Title</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Eko Atlantic Towers, Apt 4B" 
-                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-zinc-700"
-                  value={newProp.title}
-                  onChange={(e) => setNewProp({ ...newProp, title: e.target.value })}
-                  required
-                />
+                <input type="text" placeholder="e.g. Eko Atlantic Towers, Apt 4B"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500/50"
+                  value={newProp.title} onChange={(e) => setNewProp({ ...newProp, title: e.target.value })} required />
               </div>
 
+              {/* Image URL */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-zinc-500 block uppercase">Property Image URL <span className="text-zinc-600">(optional)</span></label>
+                <input type="url" placeholder="https://... link to photo of the property"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500/50"
+                  value={newProp.imageUrl} onChange={(e) => setNewProp({ ...newProp, imageUrl: e.target.value })} />
+                {newProp.imageUrl && (
+                  <img src={newProp.imageUrl} alt="preview" className="mt-2 w-full h-32 object-cover rounded-lg border border-zinc-700" onError={(e) => e.target.style.display='none'} />
+                )}
+              </div>
+
+              {/* Type + Status */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] text-zinc-500 block uppercase font-sans">Listing Type</label>
-                  <select 
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-zinc-700 font-sans"
-                    value={newProp.type}
-                    onChange={(e) => setNewProp({ ...newProp, type: e.target.value })}
-                  >
+                  <select className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none font-sans"
+                    value={newProp.type} onChange={(e) => setNewProp({ ...newProp, type: e.target.value })}>
                     <option value="RENT">RENT</option>
                     <option value="SALE">SALE</option>
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-zinc-500 block uppercase font-sans">Status</label>
-                  <select 
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-zinc-700 font-sans"
-                    value={newProp.status}
-                    onChange={(e) => setNewProp({ ...newProp, status: e.target.value })}
-                  >
+                  <select className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none font-sans"
+                    value={newProp.status} onChange={(e) => setNewProp({ ...newProp, status: e.target.value })}>
                     <option value="LISTED">LISTED (MARKETPLACE)</option>
                     <option value="LET">LET (RENTED)</option>
                     <option value="UNDER_ESCROW">UNDER_ESCROW</option>
@@ -3860,79 +3983,118 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Area + Building Type */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] text-zinc-500 block uppercase">Area / Location</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Lekki Phase 1" 
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-zinc-700"
-                    value={newProp.area}
-                    onChange={(e) => setNewProp({ ...newProp, area: e.target.value })}
-                    required
-                  />
+                  <input type="text" placeholder="e.g. Lekki Phase 1"
+                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none"
+                    value={newProp.area} onChange={(e) => setNewProp({ ...newProp, area: e.target.value })} required />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-zinc-500 block uppercase">Building Type</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Penthouse Mansion" 
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-zinc-700"
-                    value={newProp.buildingType}
-                    onChange={(e) => setNewProp({ ...newProp, buildingType: e.target.value })}
-                    required
-                  />
+                  <input type="text" placeholder="e.g. Penthouse Mansion"
+                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none"
+                    value={newProp.buildingType} onChange={(e) => setNewProp({ ...newProp, buildingType: e.target.value })} required />
                 </div>
               </div>
 
+              {/* Price + Units */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] text-zinc-500 block uppercase">Listing Price (NGN)</label>
-                  <input 
-                    type="number" 
-                    placeholder="Price amount" 
+                  <input type="number" placeholder="Price amount"
                     className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none"
-                    value={newProp.price}
-                    onChange={(e) => setNewProp({ ...newProp, price: e.target.value })}
-                    required
-                  />
+                    value={newProp.price} onChange={(e) => setNewProp({ ...newProp, price: e.target.value })} required />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-zinc-500 block uppercase">Total Rooms / Flats</label>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 8" 
+                  <input type="number" placeholder="e.g. 8"
                     className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none"
-                    value={newProp.totalUnits}
-                    onChange={(e) => setNewProp({ ...newProp, totalUnits: e.target.value })}
-                    required
-                  />
+                    value={newProp.totalUnits} onChange={(e) => setNewProp({ ...newProp, totalUnits: e.target.value })} required />
                 </div>
               </div>
 
-              <div className="space-y-1 border-t border-zinc-900 pt-3">
-                <label className="text-[10px] text-zinc-500 block uppercase">Invite Tenant Email (Optional)</label>
-                <input 
-                  type="email" 
-                  placeholder="Link an already existing tenant email" 
-                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none"
-                  value={inviteTenantEmail}
-                  onChange={(e) => setInviteTenantEmail(e.target.value)}
-                />
+              {/* Rent Schedule (only for RENT type) */}
+              {newProp.type === 'RENT' && (
+                <div className="space-y-3 border border-zinc-800 rounded-lg p-3 bg-zinc-900/50">
+                  <div className="flex items-center gap-1.5 text-emerald-400">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Rent Schedule & Projections</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-500 block uppercase">First Payment (NGN)</label>
+                      <input type="number" placeholder="e.g. 1200000"
+                        className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white focus:outline-none focus:border-emerald-500/50"
+                        value={newProp.firstPaymentAmount} onChange={(e) => setNewProp({ ...newProp, firstPaymentAmount: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-500 block uppercase">Payment Frequency</label>
+                      <select className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white focus:outline-none font-sans"
+                        value={newProp.paymentFrequency} onChange={(e) => setNewProp({ ...newProp, paymentFrequency: e.target.value })}>
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="BIANNUAL">Every 6 Months</option>
+                        <option value="ANNUAL">Annual</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-500 block uppercase">Annual Rent Projections — Year 1 → 5 (NGN)</label>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[0,1,2,3,4].map(i => (
+                        <div key={i} className="space-y-0.5">
+                          <span className="text-[9px] text-zinc-600 block text-center">Yr {i+1}</span>
+                          <input type="number" placeholder="0"
+                            className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-[10px] text-white focus:outline-none text-center"
+                            value={newProp.annualProjections[i]}
+                            onChange={(e) => {
+                              const proj = [...newProp.annualProjections];
+                              proj[i] = e.target.value;
+                              setNewProp({ ...newProp, annualProjections: proj });
+                            }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ownership Document */}
+              <div className="space-y-1 border border-zinc-800 rounded-lg p-3 bg-zinc-900/30">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="text-[10px] text-amber-400 uppercase font-bold tracking-wider">Ownership Document URL <span className="text-zinc-600 font-normal">(optional — private)</span></label>
+                </div>
+                <p className="text-[10px] text-zinc-500 mb-1.5">Upload your deed / C of O to a secure URL. It will never be shown publicly — your listing will display an "Assured by AcreWise" badge.</p>
+                <input type="url" placeholder="https://... link to ownership document"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white focus:outline-none focus:border-amber-500/50"
+                  value={newProp.ownershipDocumentUrl} onChange={(e) => setNewProp({ ...newProp, ownershipDocumentUrl: e.target.value })} />
+                {newProp.ownershipDocumentUrl && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-amber-400">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span className="text-[10px]">This listing will be marked as "Assured by AcreWise"</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex gap-2 pt-3 font-sans">
-                <button 
-                  type="submit" 
-                  className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded transition uppercase tracking-wider"
-                >
+              {/* Invite Tenant */}
+              <div className="space-y-1 border-t border-zinc-900 pt-3">
+                <label className="text-[10px] text-zinc-500 block uppercase">Invite Tenant Email (Optional)</label>
+                <input type="email" placeholder="Link an already existing tenant email"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none"
+                  value={inviteTenantEmail} onChange={(e) => setInviteTenantEmail(e.target.value)} />
+              </div>
+
+              <div className="flex gap-2 pt-1 font-sans">
+                <button type="submit"
+                  className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded transition uppercase tracking-wider">
                   List Property
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setShowPropertyModal(false)}
-                  className="flex-1 py-2 bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded transition uppercase tracking-wider"
-                >
+                <button type="button" onClick={() => setShowPropertyModal(false)}
+                  className="flex-1 py-2.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded transition uppercase tracking-wider">
                   Cancel
                 </button>
               </div>
