@@ -1,3 +1,16 @@
 {
-    "rewrites": [{ "source": "/(.*)", "destination": "/"}]
+  "rewrites": [
+    {
+      "source": "/graphql",
+      "destination": "https://acrewise-9zrp.onrender.com/graphql"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://acrewise-9zrp.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
