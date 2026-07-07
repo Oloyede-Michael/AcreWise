@@ -6,7 +6,7 @@ spring:
     name: land
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require}
     username: ${SPRING_DATASOURCE_USERNAME:postgres.tozpptsgpodiwnsyxzde}
     password: ${SPRING_DATASOURCE_PASSWORD:A0ZwvI5DKYgFeSPs}
     driver-class-name: org.postgresql.Driver
