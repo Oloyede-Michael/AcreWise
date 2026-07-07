@@ -1,0 +1,7 @@
+land/target/
+acrewise_frontend/node_modules/
+acrewise_frontend/dist/
+*.log
+*.env
+.git
+.gitignore
