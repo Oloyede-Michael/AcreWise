@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Building2, 
-  Users, 
-  FileText, 
-  ArrowLeftRight, 
-  Key, 
-  Terminal, 
-  Play, 
-  Search, 
-  Plus, 
-  Compass, 
-  Star, 
-  ShieldAlert, 
-  CheckCircle2, 
-  LogOut, 
-  HelpCircle, 
+import {
+  Building2,
+  Users,
+  FileText,
+  ArrowLeftRight,
+  Key,
+  Terminal,
+  Play,
+  Search,
+  Plus,
+  Compass,
+  Star,
+  ShieldAlert,
+  CheckCircle2,
+  LogOut,
+  HelpCircle,
   ExternalLink,
   ChevronRight,
   RefreshCw,
@@ -68,7 +68,7 @@ const CONFIG = {
 export default function App() {
   const [currentView, setCurrentView] = useState('landing'); // landing, login, dashboard
   const [userRole, setUserRole] = useState('tenant'); // landlord, tenant (restricted by userProfile.role)
-  
+
   function navigateTo(view, path) {
     if (typeof window !== 'undefined') {
       window.history.pushState(null, '', path);
@@ -102,7 +102,7 @@ export default function App() {
   const [registerRole, setRegisterRole] = useState('TENANT');
   const [authMode, setAuthMode] = useState('login'); // login, register
   const [userProfile, setUserProfile] = useState(null); // { email, role, name }
-  
+
   // Database Data States
   const [properties, setProperties] = useState([]);
   const [tenancies, setTenancies] = useState([]);
@@ -138,7 +138,7 @@ export default function App() {
 
   // Selected items
   const [selectedTenancyId, setSelectedTenancyId] = useState(null);
-  
+
   // Checkout States
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutTenancy, setCheckoutTenancy] = useState(null);
@@ -150,7 +150,7 @@ export default function App() {
   const [checkoutOtp, setCheckoutOtp] = useState('');
   const [checkoutFlashAcct, setCheckoutFlashAcct] = useState(null);
   const [checkoutCardForm, setCheckoutCardForm] = useState({ name: '', number: '', expiry: '', cvv: '', pin: '' });
-  
+
   // Tokenized Saved Cards
   const [tokenizedCards, setTokenizedCards] = useState([
     { id: "card_tok_1", cardToken: "tok_visa_4242", last4: "4242", brand: "Visa", expiry: "12/28" },
@@ -191,7 +191,7 @@ export default function App() {
   const [meterOwner, setMeterOwner] = useState('');
   const [utilityAmount, setUtilityAmount] = useState('5000');
   const [utilityToken, setUtilityToken] = useState('');
-  
+
   const [airtimeCarrier, setAirtimeCarrier] = useState('MTN');
   const [airtimePhone, setAirtimePhone] = useState('');
   const [airtimePlan, setAirtimePlan] = useState('airtime'); // airtime, data
@@ -214,7 +214,7 @@ export default function App() {
   const [betResult, setBetResult] = useState('');
 
   // Webhook Logs Console Tab and Items
-  const [simulatorSubTab, setSimulatorSubTab] = useState('playground'); 
+  const [simulatorSubTab, setSimulatorSubTab] = useState('playground');
   const [selectedLogId, setSelectedLogId] = useState(null);
   const [webhookLogs, setWebhookLogs] = useState([
     {
@@ -259,7 +259,7 @@ export default function App() {
   const [meterFormProvider, setMeterFormProvider] = useState('IKEDC');
 
   // Forms
-  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567', imageBase64: null, firstPaymentAmount: '', paymentFrequency: 'ANNUAL', annualProjections: ['','','','',''], ownershipDocumentUrl: '' });
+  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567', imageBase64: null, firstPaymentAmount: '', paymentFrequency: 'ANNUAL', annualProjections: ['', '', '', '', ''], ownershipDocumentUrl: '' });
   const [propImagePreview, setPropImagePreview] = useState(null); // Object URL for local preview
 
   function handlePropImageSelect(e) {
@@ -277,7 +277,7 @@ export default function App() {
   const [mktFxCurrency, setMktFxCurrency] = useState('USD');
   const [mktFxLoading, setMktFxLoading] = useState(false);
 
-  const FX_CURRENCIES = ['USD','EUR','GBP','CAD','AUD','JPY','CNY','INR','ZAR','GHS'];
+  const FX_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY', 'INR', 'ZAR', 'GHS'];
 
   async function fetchMarketplaceRate(currency) {
     setMktFxLoading(true);
@@ -293,10 +293,10 @@ export default function App() {
 
   // Environmental Analysis via NVIDIA NIM AI
   const [envAnalysis, setEnvAnalysis] = useState({
-    open: false,        // modal open
-    property: null,     // property being analyzed
-    loading: false,     // waiting for AI
-    report: null,       // { security, flood, electricity, neighborhood, overall }
+    open: false, // modal open
+    property: null, // property being analyzed
+    loading: false, // waiting for AI
+    report: null, // { security, flood, electricity, neighborhood, overall }
     error: null,
   });
 
@@ -308,11 +308,11 @@ export default function App() {
 
 Respond ONLY with a valid JSON object with exactly these five fields (no markdown, no code blocks, raw JSON only):
 {
-  "security": "2-3 sentence honest assessment of security/crime levels in this area",
-  "flood": "2-3 sentence assessment of flood risk — mention rainy season, drainage, proximity to waterways if relevant",
-  "electricity": "2-3 sentence assessment of power supply reliability, typical outage hours, whether the area has estate generators or PHCN issues",
-  "neighborhood": "2-3 sentence description of the neighborhood vibe, social class, nearby amenities, roads and transport",
-  "overall": "One short verdict sentence (e.g. 'Good for families, moderate security, invest in a generator')"
+ "security": "2-3 sentence honest assessment of security/crime levels in this area",
+ "flood": "2-3 sentence assessment of flood risk — mention rainy season, drainage, proximity to waterways if relevant",
+ "electricity": "2-3 sentence assessment of power supply reliability, typical outage hours, whether the area has estate generators or PHCN issues",
+ "neighborhood": "2-3 sentence description of the neighborhood vibe, social class, nearby amenities, roads and transport",
+ "overall": "One short verdict sentence (e.g. 'Good for families, moderate security, invest in a generator')"
 }`;
 
     try {
@@ -376,7 +376,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const transactionId = "tx_" + Math.random().toString(36).substring(2, 12);
     const requestId = "req_" + Math.random().toString(36).substring(2, 12);
     const timestamp = new Date().toISOString();
-    
+
     const payload = {
       eventType: "payment_success",
       requestId: requestId,
@@ -403,9 +403,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         },
         body: JSON.stringify(payload)
       });
-      
+
       await loadData();
-      
+
       const newLog = {
         id: "log_" + Math.random().toString(36).substring(2, 12),
         timestamp: new Date().toISOString(),
@@ -428,11 +428,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setApiLoading(true);
     setApiResponseOutput(null);
     const api = APIS_METADATA[selectedApiIndex];
-    
+
     let bodyObj = {};
     try {
       bodyObj = JSON.parse(requestBodyInput || '{}');
-    } catch(e) {
+    } catch (e) {
       alert("Invalid JSON format.");
       setApiLoading(false);
       return;
@@ -474,19 +474,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     e.preventDefault();
     setLoading(true);
     const mutation = `
-      mutation {
-        createTenancy(
-          propertyId: "${newTenancy.propertyId}",
-          tenantId: "${newTenancy.tenantId || 'tenant@reflow.com'}",
-          rentAmount: ${parseFloat(newTenancy.rentAmount)},
-          frequency: "${newTenancy.frequency}",
-          nextDueDate: "${newTenancy.nextDueDate}",
-          nombaVirtualAccountId: "${newTenancy.nombaVirtualAccountId}"
-        ) {
-          id
-        }
-      }
-    `;
+ mutation {
+ createTenancy(
+ propertyId: "${newTenancy.propertyId}",
+ tenantId: "${newTenancy.tenantId || 'tenant@reflow.com'}",
+ rentAmount: ${parseFloat(newTenancy.rentAmount)},
+ frequency: "${newTenancy.frequency}",
+ nextDueDate: "${newTenancy.nextDueDate}",
+ nombaVirtualAccountId: "${newTenancy.nombaVirtualAccountId}"
+ ) {
+ id
+ }
+ }
+ `;
     const data = await fetchGraphQL(mutation);
     if (data && data.createTenancy) {
       setShowTenancyModal(false);
@@ -522,89 +522,89 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function loadData() {
     setLoading(true);
     const query = `
-      query {
-        getProperties {
-          id
-          title
-          type
-          status
-          verificationStatus
-          meterNumber
-          meterProvider
-          area
-          buildingType
-          price
-          caretakerName
-          caretakerEmail
-          caretakerPhone
-          totalUnits
-          availableUnits
-          imageUrl
-          firstPaymentAmount
-          paymentFrequency
-          annualProjections
-          isAssured
-          landlord {
-            id
-            name
-            email
-            phone
-          }
-        }
-        getTenancies {
-          id
-          tenantId
-          rentAmount
-          frequency
-          nextDueDate
-          balance
-          nombaVirtualAccountId
-          property {
-            id
-            title
-            meterNumber
-            meterProvider
-            area
-            buildingType
-            price
-            caretakerName
-            caretakerEmail
-            caretakerPhone
-            landlord {
-              name
-            }
-          }
-        }
-        getEscrowTransactions {
-          id
-          buyerId
-          amountHeld
-          status
-          nombaVirtualAccountId
-          property {
-            id
-            title
-            landlord {
-              name
-            }
-          }
-        }
-        getUnmatchedQueue {
-          id
-          amount
-          nombaReference
-          matchedStatus
-          receivedAt
-        }
-      }
-    `;
+ query {
+ getProperties {
+ id
+ title
+ type
+ status
+ verificationStatus
+ meterNumber
+ meterProvider
+ area
+ buildingType
+ price
+ caretakerName
+ caretakerEmail
+ caretakerPhone
+ totalUnits
+ availableUnits
+ imageUrl
+ firstPaymentAmount
+ paymentFrequency
+ annualProjections
+ isAssured
+ landlord {
+ id
+ name
+ email
+ phone
+ }
+ }
+ getTenancies {
+ id
+ tenantId
+ rentAmount
+ frequency
+ nextDueDate
+ balance
+ nombaVirtualAccountId
+ property {
+ id
+ title
+ meterNumber
+ meterProvider
+ area
+ buildingType
+ price
+ caretakerName
+ caretakerEmail
+ caretakerPhone
+ landlord {
+ name
+ }
+ }
+ }
+ getEscrowTransactions {
+ id
+ buyerId
+ amountHeld
+ status
+ nombaVirtualAccountId
+ property {
+ id
+ title
+ landlord {
+ name
+ }
+ }
+ }
+ getUnmatchedQueue {
+ id
+ amount
+ nombaReference
+ matchedStatus
+ receivedAt
+ }
+ }
+ `;
     const data = await fetchGraphQL(query);
     if (data) {
       setProperties(data.getProperties || []);
       setTenancies(data.getTenancies || []);
       setEscrowTxns(data.getEscrowTransactions || []);
       setUnmatchedPayments(data.getUnmatchedQueue || []);
-      
+
       if (data.getTenancies && data.getTenancies.length > 0 && !selectedTenancyId) {
         setSelectedTenancyId(data.getTenancies[0].id);
       }
@@ -629,19 +629,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function loadReceipts() {
     if (!userProfile) return;
     const query = `
-      query {
-        getReceipts(tenantEmail: "${userProfile.email}") {
-          id
-          title
-          category
-          amount
-          reference
-          details
-          tenantEmail
-          createdAt
-        }
-      }
-    `;
+ query {
+ getReceipts(tenantEmail: "${userProfile.email}") {
+ id
+ title
+ category
+ amount
+ reference
+ details
+ tenantEmail
+ createdAt
+ }
+ }
+ `;
     const data = await fetchGraphQL(query);
     if (data) {
       setUserReceipts(data.getReceipts || []);
@@ -651,16 +651,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function loadChatMessages(propertyId) {
     setChatLoading(true);
     const query = `
-      query {
-        getChatMessages(propertyId: "${propertyId}") {
-          id
-          senderEmail
-          senderRole
-          message
-          createdAt
-        }
-      }
-    `;
+ query {
+ getChatMessages(propertyId: "${propertyId}") {
+ id
+ senderEmail
+ senderRole
+ message
+ createdAt
+ }
+ }
+ `;
     const data = await fetchGraphQL(query);
     if (data) {
       setChatMessages(data.getChatMessages || []);
@@ -672,12 +672,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function seedDemoData() {
     setLoading(true);
     const landlordMutation = `
-      mutation {
-        createLandlord(name: "Chinedu Okafor", email: "chinedu@acrewise.com", phone: "+234 803 123 4567") {
-          id
-        }
-      }
-    `;
+ mutation {
+ createLandlord(name: "Chinedu Okafor", email: "chinedu@acrewise.com", phone: "+234 803 123 4567") {
+ id
+ }
+ }
+ `;
     const landlordData = await fetchGraphQL(landlordMutation);
     if (!landlordData || !landlordData.createLandlord) {
       setLoading(false);
@@ -687,44 +687,44 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
     // Use full listProperty mutation to seed with area, type, and price
     const prop1Mutation = `
-      mutation {
-        listProperty(
-          landlordId: "${landlordId}", 
-          title: "Eko Atlantic Towers, Apt 4B", 
-          type: "RENT", 
-          status: "LISTED",
-          area: "Eko Atlantic",
-          buildingType: "High-Rise Apartment",
-          price: 1200000.0
-        ) { id }
-      }
-    `;
+ mutation {
+ listProperty(
+ landlordId: "${landlordId}", 
+ title: "Eko Atlantic Towers, Apt 4B", 
+ type: "RENT", 
+ status: "LISTED",
+ area: "Eko Atlantic",
+ buildingType: "High-Rise Apartment",
+ price: 1200000.0
+ ) { id }
+ }
+ `;
     const prop2Mutation = `
-      mutation {
-        listProperty(
-          landlordId: "${landlordId}", 
-          title: "Lekki Peninsula Villa, Phase 1", 
-          type: "RENT", 
-          status: "LET",
-          area: "Lekki Phase 1",
-          buildingType: "Duplex Villa",
-          price: 3500000.0
-        ) { id }
-      }
-    `;
+ mutation {
+ listProperty(
+ landlordId: "${landlordId}", 
+ title: "Lekki Peninsula Villa, Phase 1", 
+ type: "RENT", 
+ status: "LET",
+ area: "Lekki Phase 1",
+ buildingType: "Duplex Villa",
+ price: 3500000.0
+ ) { id }
+ }
+ `;
     const prop3Mutation = `
-      mutation {
-        listProperty(
-          landlordId: "${landlordId}", 
-          title: "Banana Island Mansion", 
-          type: "SALE", 
-          status: "UNDER_ESCROW",
-          area: "Banana Island",
-          buildingType: "Penthouse Mansion",
-          price: 45000000.0
-        ) { id }
-      }
-    `;
+ mutation {
+ listProperty(
+ landlordId: "${landlordId}", 
+ title: "Banana Island Mansion", 
+ type: "SALE", 
+ status: "UNDER_ESCROW",
+ area: "Banana Island",
+ buildingType: "Penthouse Mansion",
+ price: 45000000.0
+ ) { id }
+ }
+ `;
 
     const p1 = await fetchGraphQL(prop1Mutation);
     const p2 = await fetchGraphQL(prop2Mutation);
@@ -732,47 +732,47 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
     if (p1 && p1.listProperty) {
       const t1Mutation = `
-        mutation {
-          createTenancy(
-            propertyId: "${p1.listProperty.id}",
-            tenantId: "tenant@acrewise.com",
-            rentAmount: 1200000.0,
-            frequency: "MONTHLY",
-            nextDueDate: "2026-08-01",
-            nombaVirtualAccountId: "va_eko_atlantic_rent"
-          ) { id }
-        }
-      `;
+ mutation {
+ createTenancy(
+ propertyId: "${p1.listProperty.id}",
+ tenantId: "tenant@acrewise.com",
+ rentAmount: 1200000.0,
+ frequency: "MONTHLY",
+ nextDueDate: "2026-08-01",
+ nombaVirtualAccountId: "va_eko_atlantic_rent"
+ ) { id }
+ }
+ `;
       await fetchGraphQL(t1Mutation);
     }
 
     if (p2 && p2.listProperty) {
       const t2Mutation = `
-        mutation {
-          createTenancy(
-            propertyId: "${p2.listProperty.id}",
-            tenantId: "tenant2@acrewise.com",
-            rentAmount: 3500000.0,
-            frequency: "ANNUAL",
-            nextDueDate: "2026-07-15",
-            nombaVirtualAccountId: "va_lekki_villa_rent"
-          ) { id }
-        }
-      `;
+ mutation {
+ createTenancy(
+ propertyId: "${p2.listProperty.id}",
+ tenantId: "tenant2@acrewise.com",
+ rentAmount: 3500000.0,
+ frequency: "ANNUAL",
+ nextDueDate: "2026-07-15",
+ nombaVirtualAccountId: "va_lekki_villa_rent"
+ ) { id }
+ }
+ `;
       await fetchGraphQL(t2Mutation);
     }
 
     if (p3 && p3.listProperty) {
       const eMutation = `
-        mutation {
-          createEscrowTransaction(
-            propertyId: "${p3.listProperty.id}",
-            buyerId: "buyer@acrewise.com",
-            amountHeld: 45000000.0,
-            nombaVirtualAccountId: "va_banana_island_escrow"
-          ) { id }
-        }
-      `;
+ mutation {
+ createEscrowTransaction(
+ propertyId: "${p3.listProperty.id}",
+ buyerId: "buyer@acrewise.com",
+ amountHeld: 45000000.0,
+ nombaVirtualAccountId: "va_banana_island_escrow"
+ ) { id }
+ }
+ `;
       await fetchGraphQL(eMutation);
     }
 
@@ -797,19 +797,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
     // Update tenant email via createTenancy override mapping
     const mutation = `
-      mutation {
-        createTenancy(
-          propertyId: "${matched.property.id}",
-          tenantId: "${userProfile.email}",
-          rentAmount: ${matched.rentAmount},
-          frequency: "${matched.frequency}",
-          nextDueDate: "${matched.nextDueDate}",
-          nombaVirtualAccountId: "${matched.nombaVirtualAccountId}"
-        ) {
-          id
-        }
-      }
-    `;
+ mutation {
+ createTenancy(
+ propertyId: "${matched.property.id}",
+ tenantId: "${userProfile.email}",
+ rentAmount: ${matched.rentAmount},
+ frequency: "${matched.frequency}",
+ nextDueDate: "${matched.nextDueDate}",
+ nombaVirtualAccountId: "${matched.nombaVirtualAccountId}"
+ ) {
+ id
+ }
+ }
+ `;
     const data = await fetchGraphQL(mutation);
     if (data) {
       setClaimVaNumber('');
@@ -832,15 +832,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
     if (authMode === 'login') {
       const loginQuery = `
-        query {
-          getUserProfile(email: "${loginEmail.toLowerCase()}") {
-            id
-            email
-            role
-            name
-          }
-        }
-      `;
+ query {
+ getUserProfile(email: "${loginEmail.toLowerCase()}") {
+ id
+ email
+ role
+ name
+ }
+ }
+ `;
       const data = await fetchGraphQL(loginQuery);
       if (data && data.getUserProfile) {
         const profile = data.getUserProfile;
@@ -853,19 +853,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       }
     } else {
       const registerMutation = `
-        mutation {
-          registerUserProfile(
-            email: "${loginEmail.toLowerCase()}", 
-            name: "${loginName || loginEmail.split('@')[0]}",
-            role: "${registerRole}"
-          ) {
-            id
-            email
-            role
-            name
-          }
-        }
-      `;
+ mutation {
+ registerUserProfile(
+ email: "${loginEmail.toLowerCase()}", 
+ name: "${loginName || loginEmail.split('@')[0]}",
+ role: "${registerRole}"
+ ) {
+ id
+ email
+ role
+ name
+ }
+ }
+ `;
       const data = await fetchGraphQL(registerMutation);
       if (data && data.registerUserProfile) {
         const profile = data.registerUserProfile;
@@ -885,15 +885,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     if (!userProfile) return;
     setLoading(true);
     const upgradeMutation = `
-      mutation {
-        upgradeToLandlord(email: "${userProfile.email}") {
-          id
-          email
-          role
-          name
-        }
-      }
-    `;
+ mutation {
+ upgradeToLandlord(email: "${userProfile.email}") {
+ id
+ email
+ role
+ name
+ }
+ }
+ `;
     const data = await fetchGraphQL(upgradeMutation);
     if (data && data.upgradeToLandlord) {
       const updatedProfile = data.upgradeToLandlord;
@@ -911,18 +911,18 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     e.preventDefault();
     setLoading(true);
     const linkMutation = `
-      mutation {
-        linkPropertyMeter(
-          propertyId: "${meterModalPropertyId}",
-          meterNumber: "${meterFormNumber}",
-          meterProvider: "${meterFormProvider}"
-        ) {
-          id
-          meterNumber
-          meterProvider
-        }
-      }
-    `;
+ mutation {
+ linkPropertyMeter(
+ propertyId: "${meterModalPropertyId}",
+ meterNumber: "${meterFormNumber}",
+ meterProvider: "${meterFormProvider}"
+ ) {
+ id
+ meterNumber
+ meterProvider
+ }
+ }
+ `;
     const data = await fetchGraphQL(linkMutation);
     if (data && data.linkPropertyMeter) {
       setShowMeterModal(false);
@@ -941,35 +941,35 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setLoading(true);
 
     const landlordMutation = `
-      mutation {
-        createLandlord(name: "${userProfile.name}", email: "${userProfile.email}", phone: "+23480000000") {
-          id
-        }
-      }
-    `;
+ mutation {
+ createLandlord(name: "${userProfile.name}", email: "${userProfile.email}", phone: "+23480000000") {
+ id
+ }
+ }
+ `;
     const landlordData = await fetchGraphQL(landlordMutation);
     if (landlordData && landlordData.createLandlord) {
       const landlordId = landlordData.createLandlord.id;
-      const projStr = JSON.stringify(newProp.annualProjections.map(v => parseFloat(v)||0));
+      const projStr = JSON.stringify(newProp.annualProjections.map(v => parseFloat(v) || 0));
       const hasOwnerDoc = newProp.ownershipDocumentUrl && newProp.ownershipDocumentUrl.trim();
 
       // Send imageBase64 via variables to safely handle large payloads
       const propMutation = `
-        mutation ListProperty(
-          $landlordId: ID!, $title: String!, $type: String!, $status: String!,
-          $area: String!, $buildingType: String!, $price: Float!, $totalUnits: Int,
-          $imageUrl: String, $firstPaymentAmount: Float, $paymentFrequency: String,
-          $annualProjections: String, $ownershipDocumentUrl: String
-        ) {
-          listProperty(
-            landlordId: $landlordId, title: $title, type: $type, status: $status,
-            area: $area, buildingType: $buildingType, price: $price, totalUnits: $totalUnits,
-            imageUrl: $imageUrl, firstPaymentAmount: $firstPaymentAmount,
-            paymentFrequency: $paymentFrequency, annualProjections: $annualProjections,
-            ownershipDocumentUrl: $ownershipDocumentUrl
-          ) { id }
-        }
-      `;
+ mutation ListProperty(
+ $landlordId: ID!, $title: String!, $type: String!, $status: String!,
+ $area: String!, $buildingType: String!, $price: Float!, $totalUnits: Int,
+ $imageUrl: String, $firstPaymentAmount: Float, $paymentFrequency: String,
+ $annualProjections: String, $ownershipDocumentUrl: String
+ ) {
+ listProperty(
+ landlordId: $landlordId, title: $title, type: $type, status: $status,
+ area: $area, buildingType: $buildingType, price: $price, totalUnits: $totalUnits,
+ imageUrl: $imageUrl, firstPaymentAmount: $firstPaymentAmount,
+ paymentFrequency: $paymentFrequency, annualProjections: $annualProjections,
+ ownershipDocumentUrl: $ownershipDocumentUrl
+ ) { id }
+ }
+ `;
       const propVars = {
         landlordId,
         title: newProp.title,
@@ -991,17 +991,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         if (inviteTenantEmail) {
           const generatedVa = "va_" + Math.random().toString(36).substring(2, 10);
           const tenancyMutation = `
-            mutation {
-              createTenancy(
-                propertyId: "${propId}",
-                tenantId: "${inviteTenantEmail.toLowerCase()}",
-                rentAmount: ${parseFloat(newProp.price)},
-                frequency: "${newProp.paymentFrequency}",
-                nextDueDate: "2026-08-01",
-                nombaVirtualAccountId: "${generatedVa}"
-              ) { id }
-            }
-          `;
+ mutation {
+ createTenancy(
+ propertyId: "${propId}",
+ tenantId: "${inviteTenantEmail.toLowerCase()}",
+ rentAmount: ${parseFloat(newProp.price)},
+ frequency: "${newProp.paymentFrequency}",
+ nextDueDate: "2026-08-01",
+ nombaVirtualAccountId: "${generatedVa}"
+ ) { id }
+ }
+ `;
           await fetchGraphQL(tenancyMutation);
           setInviteTenantEmail('');
         }
@@ -1019,18 +1019,18 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     e.preventDefault();
     setLoading(true);
     const mutation = `
-      mutation {
-        assignPropertyCaretaker(
-          propertyId: "${caretakerPropId}",
-          name: "${caretakerForm.name}",
-          email: "${caretakerForm.email}",
-          phone: "${caretakerForm.phone}"
-        ) {
-          id
-          caretakerName
-        }
-      }
-    `;
+ mutation {
+ assignPropertyCaretaker(
+ propertyId: "${caretakerPropId}",
+ name: "${caretakerForm.name}",
+ email: "${caretakerForm.email}",
+ phone: "${caretakerForm.phone}"
+ ) {
+ id
+ caretakerName
+ }
+ }
+ `;
     const data = await fetchGraphQL(mutation);
     if (data && data.assignPropertyCaretaker) {
       setShowCaretakerModal(false);
@@ -1048,17 +1048,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     e.preventDefault();
     if (!chatInputText.trim()) return;
     const msgMutation = `
-      mutation {
-        sendChatMessage(
-          propertyId: "${activeChatPropertyId}",
-          senderEmail: "${userProfile.email}",
-          senderRole: "${userRole.toUpperCase()}",
-          message: "${chatInputText}"
-        ) {
-          id
-        }
-      }
-    `;
+ mutation {
+ sendChatMessage(
+ propertyId: "${activeChatPropertyId}",
+ senderEmail: "${userProfile.email}",
+ senderRole: "${userRole.toUpperCase()}",
+ message: "${chatInputText}"
+ ) {
+ id
+ }
+ }
+ `;
     const data = await fetchGraphQL(msgMutation);
     if (data && data.sendChatMessage) {
       setChatInputText('');
@@ -1071,7 +1071,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setIsProvisioningVa(true);
     const mockVirtualAcctSpec = APIS_METADATA.find(a => a.name === "Create virtual account for a sub account");
     const accountRef = "ref_" + Math.random().toString(36).substring(2, 12);
-    
+
     const requestBody = {
       accountRef: accountRef,
       accountName: "AcreWise Tenant VA",
@@ -1132,7 +1132,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         setPosTerminals(mapped);
         alert("Successfully synced POS Terminal rosters from Nomba Sandbox!");
       }
-    } catch(err) {
+    } catch (err) {
       alert("Could not load sub-account terminals.");
     }
     setFetchingTerminals(false);
@@ -1147,7 +1147,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setPayoutVerifying(true);
     setPayoutVerifiedName('');
     const lookupSpec = APIS_METADATA.find(a => a.name === "Perform bank account lookup");
-    
+
     try {
       const res = await fetch('/api/nomba-sandbox/execute', {
         method: 'POST',
@@ -1169,7 +1169,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       } else {
         alert("Verification failed. Check account credentials.");
       }
-    } catch(err) {
+    } catch (err) {
       alert("Lookup lookup failed.");
     }
     setPayoutVerifying(false);
@@ -1207,7 +1207,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       });
       const data = await res.json();
       setPayoutResult(data);
-      
+
       // Save Receipt
       await saveReceipt("Bank Transfer Payout", "RENT", parseFloat(payoutAmount), data.data.id || "tx_payout", `Transfer of ₦${payoutAmount} to ${payoutVerifiedName}`);
 
@@ -1215,7 +1215,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       setPayoutAmount('');
       setPayoutAcctNumber('');
       setPayoutVerifiedName('');
-    } catch(err) {
+    } catch (err) {
       alert("Transfer failed.");
     }
     setLoading(false);
@@ -1275,14 +1275,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       if (data && data.code === "00") {
         setFxResult(`Exchange Authorized! Converted ₦${fxAmount} at rate ${fxRate}. Target Balance Credited.`);
-        
+
         // Save Receipt
         await saveReceipt("Currency Conversion", "RENT", parseFloat(fxAmount), fxExchangeId, `Converted NGN to ${fxTargetCurrency} at rate ${fxRate}`);
 
         setFxStep(1);
         setFxOtp('');
       }
-    } catch(err) {
+    } catch (err) {
       alert("Verification failed.");
     }
     setLoading(false);
@@ -1304,19 +1304,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function saveReceipt(title, category, amount, reference, details) {
     if (!userProfile) return;
     const mutation = `
-      mutation {
-        createReceipt(
-          title: "${title}",
-          category: "${category}",
-          amount: ${parseFloat(amount)},
-          reference: "${reference}",
-          details: "${details}",
-          tenantEmail: "${userProfile.email}"
-        ) {
-          id
-        }
-      }
-    `;
+ mutation {
+ createReceipt(
+ title: "${title}",
+ category: "${category}",
+ amount: ${parseFloat(amount)},
+ reference: "${reference}",
+ details: "${details}",
+ tenantEmail: "${userProfile.email}"
+ ) {
+ id
+ }
+ }
+ `;
     await fetchGraphQL(mutation);
     await loadReceipts();
   }
@@ -1326,7 +1326,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     e.preventDefault();
     setLoading(true);
     setTimeout(async () => {
-      const tokens = Array.from({length: 5}, () => Math.floor(1000 + Math.random() * 9000)).join('-');
+      const tokens = Array.from({ length: 5 }, () => Math.floor(1000 + Math.random() * 9000)).join('-');
       setUtilityToken(tokens);
       setLoading(false);
 
@@ -1344,7 +1344,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setTimeout(async () => {
       setLoading(false);
       const reference = "AIR_" + Math.random().toString(36).substring(2, 10);
-      
+
       // Save Receipt
       await saveReceipt("Mobile Airtime / Data", "UTILITY", 3000, reference, `Vended to ${airtimePhone} under plan: ${airtimePlan}`);
 
@@ -1388,7 +1388,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       if (data && data.code === "00") {
         setTvVerifiedName(data.data.name);
       }
-    } catch(err) {
+    } catch (err) {
       alert("Verification failed.");
     }
     setTvVerifying(false);
@@ -1407,7 +1407,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       setTimeout(async () => {
         const reference = "TV_ORD_" + Math.floor(100000 + Math.random() * 900000);
         setTvResult(`Cable TV subscription active! Receipt: ${reference}`);
-        
+
         // Save Receipt
         await saveReceipt("Cable TV Subscription", "CABLE", 5100, reference, `Vended to Smartcard: ${tvSmartcard} (${tvProvider}) Package: ${tvPackageCode}`);
 
@@ -1436,14 +1436,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       if (data && data.code === "00") {
         setTvResult(`Cable TV subscription active! Receipt: ${data.data.orderId}`);
-        
+
         // Save Receipt
         await saveReceipt("Cable TV Subscription", "CABLE", 5100, data.data.orderId, `Vended to Smartcard: ${tvSmartcard} (${tvProvider})`);
 
         setTvSmartcard('');
         setTvVerifiedName('');
       }
-    } catch(err) {
+    } catch (err) {
       alert("Vending failed.");
     }
     setLoading(false);
@@ -1484,7 +1484,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       if (data && data.code === "00") {
         setBetVerifiedName(data.data.customerName);
       }
-    } catch(err) {
+    } catch (err) {
       alert("Customer check failed.");
     }
     setBetVerifying(false);
@@ -1503,7 +1503,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       setTimeout(async () => {
         const reference = "BET_TXN_" + Math.floor(100000 + Math.random() * 900000);
         setBetResult(`Betting Wallet Topup Successful! Ref: ${reference}`);
-        
+
         // Save Receipt
         await saveReceipt("Betting Wallet Credit", "BETTING", parseFloat(betAmount), reference, `Credited betting account: ${betCustomerId} (${betProvider})`);
 
@@ -1532,14 +1532,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       if (data && data.code === "00") {
         setBetResult(`Betting Wallet Topup Successful! Ref: ${data.data.transactionRef}`);
-        
+
         // Save Receipt
         await saveReceipt("Betting Wallet Credit", "BETTING", parseFloat(betAmount), data.data.transactionRef, `Credited betting account: ${betCustomerId} (${betProvider})`);
 
         setBetCustomerId('');
         setBetVerifiedName('');
       }
-    } catch(err) {
+    } catch (err) {
       alert("Betting payment failed.");
     }
     setLoading(false);
@@ -1563,7 +1563,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         });
         setTokenizedCards(prev => prev.filter(c => c.cardToken !== tokenId));
         alert("Card token revoked successfully and card details removed.");
-      } catch(err) {
+      } catch (err) {
         alert("Failed to delete tokenized card.");
       }
     }
@@ -1652,7 +1652,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function handleSubmitCardOtp() {
     setIsPaying(true);
     const otpSpec = APIS_METADATA.find(a => a.name === "Submit customer card OTP");
-    
+
     let amt = checkoutTenancy.rentAmount;
     if (checkoutOption === 'partial') amt = checkoutTenancy.rentAmount * 0.75;
     if (checkoutOption === 'overpaid') amt = checkoutTenancy.rentAmount * 1.25;
@@ -1682,12 +1682,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           // Save Receipt
           await saveReceipt("Rent Payment", "RENT", amt, "CRD_CHG_" + Math.random().toString(36).substring(2, 10), `Debit Card Charge verification successful for account: ${checkoutTenancy.nombaVirtualAccountId}`);
         }
-        
+
         setPaymentStatus('success');
       } else {
         setPaymentStatus('error');
       }
-    } catch(err) {
+    } catch (err) {
       setPaymentStatus('error');
     }
     setIsPaying(false);
@@ -1697,25 +1697,25 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function handleMarketplaceCheckout(propObj) {
     // Generate mock virtual account reference
     const tempVa = "va_market_" + Math.random().toString(36).substring(2, 10);
-    
+
     // Perform simulated checkout
     setLoading(true);
-    
+
     const rentAmount = propObj.price;
     const isSale = propObj.type === 'SALE';
-    
+
     // Create new tenancy/escrow
     if (isSale) {
       const eMutation = `
-        mutation {
-          createEscrowTransaction(
-            propertyId: "${propObj.id}",
-            buyerId: "${userProfile.email}",
-            amountHeld: ${rentAmount},
-            nombaVirtualAccountId: "${tempVa}"
-          ) { id status }
-        }
-      `;
+ mutation {
+ createEscrowTransaction(
+ propertyId: "${propObj.id}",
+ buyerId: "${userProfile.email}",
+ amountHeld: ${rentAmount},
+ nombaVirtualAccountId: "${tempVa}"
+ ) { id status }
+ }
+ `;
       await fetchGraphQL(eMutation);
       // Mark property as UNDER_ESCROW so it's taken off the open marketplace
       await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${propObj.id}", status: "UNDER_ESCROW") { id } }`);
@@ -1723,17 +1723,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     } else {
       const freq = propObj.paymentFrequency || 'MONTHLY';
       const tMutation = `
-        mutation {
-          createTenancy(
-            propertyId: "${propObj.id}",
-            tenantId: "${userProfile.email}",
-            rentAmount: ${rentAmount},
-            frequency: "${freq}",
-            nextDueDate: "2026-08-01",
-            nombaVirtualAccountId: "${tempVa}"
-          ) { id }
-        }
-      `;
+ mutation {
+ createTenancy(
+ propertyId: "${propObj.id}",
+ tenantId: "${userProfile.email}",
+ rentAmount: ${rentAmount},
+ frequency: "${freq}",
+ nextDueDate: "2026-08-01",
+ nombaVirtualAccountId: "${tempVa}"
+ ) { id }
+ }
+ `;
       await fetchGraphQL(tMutation);
       await saveReceipt("Rent First Payment", "RENT", rentAmount, "RNT_" + Math.random().toString(36).substring(2, 10), `First rent payment successful for: ${propObj.title}. Auto-subscription active — next payment due per ${freq.toLowerCase()} schedule.`);
     }
@@ -1743,29 +1743,29 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const nextAvailable = currentAvailable - 1;
 
     const decUnitsMutation = `
-      mutation {
-        decrementPropertyUnits(propertyId: "${propObj.id}") {
-          id
-          availableUnits
-        }
-      }
-    `;
+ mutation {
+ decrementPropertyUnits(propertyId: "${propObj.id}") {
+ id
+ availableUnits
+ }
+ }
+ `;
     await fetchGraphQL(decUnitsMutation);
 
     // If all rooms/flats are taken, update status to SOLD or LET (taking it off the marketplace)
     if (nextAvailable <= 0) {
       const targetStatus = isSale ? "SOLD" : "LET";
       const updateStatusMutation = `
-        mutation {
-          updatePropertyStatus(
-            propertyId: "${propObj.id}",
-            status: "${targetStatus}"
-          ) {
-            id
-            status
-          }
-        }
-      `;
+ mutation {
+ updatePropertyStatus(
+ propertyId: "${propObj.id}",
+ status: "${targetStatus}"
+ ) {
+ id
+ status
+ }
+ }
+ `;
       await fetchGraphQL(updateStatusMutation);
     }
 
@@ -1806,8 +1806,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   // Filter properties
   const filteredProperties = properties.filter(p => {
     const matchesLandlord = userRole !== 'landlord' || p.landlord?.email === userProfile?.email;
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (p.landlord?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.landlord?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'ALL' || p.status === filterType || p.type === filterType;
     return matchesLandlord && matchesSearch && matchesType;
   });
@@ -1815,7 +1815,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   const totalActiveArrears = tenancies.reduce((sum, t) => t.balance < 0 ? sum + Math.abs(t.balance) : sum, 0);
   const totalRentAmount = tenancies.reduce((sum, t) => sum + t.rentAmount, 0);
   const totalActiveEscrow = escrowTxns.reduce((acc, curr) => curr.status === 'HELD' ? acc + curr.amountHeld : acc, 0);
-  
+
   // Find tenant's tenancy
   const tenantActiveTenancies = tenancies.filter(t => t.tenantId === userProfile?.email);
   const activeTenantTenancyObj = selectedTenancyId
@@ -1823,7 +1823,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     : (tenantActiveTenancies.length > 0 ? tenantActiveTenancies[0] : null);
 
   // Chatroom properties dropdown list
-  const activeChatroomProperties = userRole === 'landlord' 
+  const activeChatroomProperties = userRole === 'landlord'
     ? properties.filter(p => tenancies.some(t => t.property.id === p.id))
     : properties.filter(p => tenancies.some(t => t.property.id === p.id && t.tenantId === userProfile?.email));
 
@@ -1844,16 +1844,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur-md px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 font-mono tracking-wider font-bold text-lg text-slate-900">
-              <div className="w-3 h-3 bg-emerald-600 rounded-full animate-pulse"></div>
+              <div className="w-3 h-3 bg-slate-700 rounded-full animate-pulse"></div>
               ACREWISE
             </div>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-600">
-            <a href="#how-it-works" className="hover:text-slate-900 transition">How it works</a>
-            <a href="#why-acrewise" className="hover:text-slate-900 transition">Why Acrewise</a>
-            <a href="#faq" className="hover:text-slate-900 transition">FAQ</a>
+            <a href="#how-it-works" className=" transition">How it works</a>
+            <a href="#why-acrewise" className=" transition">Why Acrewise</a>
+            <a href="#faq" className=" transition">FAQ</a>
           </nav>
-          <button onClick={() => navigateTo('login', '/auth')} className="px-4 py-2 bg-slate-900 text-white font-semibold text-xs rounded tracking-wide transition hover:bg-emerald-300">
+          <button onClick={() => navigateTo('login', '/auth')} className="px-4 py-2 text-white font-semibold text-xs rounded tracking-wide transition ">
             GET STARTED
           </button>
         </header>
@@ -1864,7 +1864,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           <section className="relative pt-16 px-6 md:px-16 lg:px-24">
             <div className="grid gap-16 lg:grid-cols-2 items-center max-w-7xl mx-auto">
               <div className="space-y-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold uppercase tracking-[0.18em]">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold uppercase tracking-[0.18em]">
                   <Sparkles className="w-3.5 h-3.5" />
                   BUILT FOR PROPERTY PAYMENTS
                 </div>
@@ -1877,10 +1877,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button onClick={() => navigateTo('login', '/auth')} className="px-8 py-4 bg-slate-900 text-white font-bold text-sm uppercase rounded-xl transition hover:bg-emerald-300">
+                  <button onClick={() => navigateTo('login', '/auth')} className="px-8 py-4 text-white font-bold text-sm uppercase rounded-xl transition ">
                     Get Started
                   </button>
-                  <a href="#how-it-works" className="inline-flex items-center justify-center px-8 py-4 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:border-emerald-400 hover:text-slate-900 transition">
+                  <a href="#how-it-works" className="inline-flex items-center justify-center px-8 py-4 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:border-slate-400 transition">
                     See how it works
                   </a>
                 </div>
@@ -1905,7 +1905,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               </div>
 
               <div className="relative">
-                <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-emerald-300/30 via-white/0 to-sky-300/10 blur-3xl" />
+                <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-slate-400/30 via-white/0 to-sky-300/10 blur-3xl" />
                 <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-900/10">
                   <img src="/dashboard_image.jpg" alt="Acrewise dashboard preview" className="w-full h-full object-cover min-h-[420px]" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
@@ -1930,23 +1930,23 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           <section id="how-it-works" className="relative py-24 px-6 md:px-16 lg:px-24 bg-slate-50">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mx-auto max-w-2xl">
-                <p className="text-sm uppercase tracking-[0.24em] text-emerald-600 font-semibold">How it works</p>
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-700 font-semibold">How it works</p>
                 <h2 className="mt-4 text-4xl font-bold text-slate-900">From onboarding to escrow settlement in three simple steps.</h2>
                 <p className="mt-4 text-slate-600 leading-relaxed">Acrewise abstracts the complexity of payment routing, reconciliation, and tenant communication so you can manage your portfolio confidently.</p>
               </div>
               <div className="mt-16 grid gap-8 md:grid-cols-3">
                 <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                  <div className="text-emerald-600 text-2xl font-bold">1</div>
+                  <div className="text-slate-700 text-2xl font-bold">1</div>
                   <h3 className="mt-4 text-xl font-semibold text-slate-900">Activate accounts</h3>
                   <p className="mt-3 text-slate-600">Provision virtual accounts, link tenants, and automate rent request generation.</p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                  <div className="text-emerald-600 text-2xl font-bold">2</div>
+                  <div className="text-slate-700 text-2xl font-bold">2</div>
                   <h3 className="mt-4 text-xl font-semibold text-slate-900">Collect & reconcile</h3>
                   <p className="mt-3 text-slate-600">Match incoming payments to leases and keep every transaction reconciled with your ledger.</p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                  <div className="text-emerald-600 text-2xl font-bold">3</div>
+                  <div className="text-slate-700 text-2xl font-bold">3</div>
                   <h3 className="mt-4 text-xl font-semibold text-slate-900">Release funds</h3>
                   <p className="mt-3 text-slate-600">Manage escrow approvals, vendor payouts, and tenant refunds from a single console.</p>
                 </div>
@@ -1985,7 +1985,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           <section id="faq" className="py-24 px-6 md:px-16 lg:px-24 bg-slate-50">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mx-auto max-w-2xl">
-                <p className="text-sm uppercase tracking-[0.24em] text-emerald-600 font-semibold">Frequently asked questions</p>
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-700 font-semibold">Frequently asked questions</p>
                 <h2 className="mt-4 text-4xl font-bold text-slate-900">Answers for property managers and finance teams.</h2>
               </div>
               <div className="mt-16 grid gap-6 lg:grid-cols-2">
@@ -2031,7 +2031,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   if (currentView === 'login') {
     return (
       <div className="min-h-screen bg-slate-50 text-gray-900 flex flex-col items-center justify-center p-6"
-           style={{ backgroundImage: `radial-gradient(circle at top, rgba(226, 232, 240, 0.5), transparent)` }}>
+        style={{ backgroundImage: `radial-gradient(circle at top, rgba(226, 232, 240, 0.5), transparent)` }}>
         <div className="w-full max-w-md p-8 border border-gray-200 bg-white backdrop-blur rounded-xl space-y-6">
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-2 font-mono font-bold tracking-wider text-slate-700 text-lg">
@@ -2043,17 +2043,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           </div>
 
           <div className="flex border-b border-gray-200 text-xs font-mono">
-            <button 
-              type="button" 
-              onClick={() => setAuthMode('login')} 
-              className={`flex-1 pb-2 font-bold uppercase transition ${authMode === 'login' ? 'text-slate-700 border-b-2 border-emerald-500' : 'text-gray-400 hover:text-gray-700'}`}
+            <button
+              type="button"
+              onClick={() => setAuthMode('login')}
+              className={`flex-1 pb-2 font-bold uppercase transition ${authMode === 'login' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-700'}`}
             >
               Log In
             </button>
-            <button 
-              type="button" 
-              onClick={() => setAuthMode('register')} 
-              className={`flex-1 pb-2 font-bold uppercase transition ${authMode === 'register' ? 'text-slate-700 border-b-2 border-emerald-500' : 'text-gray-400 hover:text-gray-700'}`}
+            <button
+              type="button"
+              onClick={() => setAuthMode('register')}
+              className={`flex-1 pb-2 font-bold uppercase transition ${authMode === 'register' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-700'}`}
             >
               Register Profile
             </button>
@@ -2064,10 +2064,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <label className="text-[10px] text-gray-400 block">PROFILE EMAIL ADDRESS</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input 
-                  type="email" 
-                  placeholder="e.g. landlord@reflow.com" 
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-emerald-500 transition"
+                <input
+                  type="email"
+                  placeholder="e.g. landlord@reflow.com"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-slate-300 transition"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   required
@@ -2083,14 +2083,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <button
                       type="button"
                       onClick={() => setRegisterRole('TENANT')}
-                      className={`py-2.5 border rounded font-mono text-xs transition uppercase ${registerRole === 'TENANT' ? 'bg-gray-100 text-slate-700 border-emerald-500/30' : 'bg-slate-50 text-zinc-650 border-gray-200 hover:border-gray-200'}`}
+                      className={`py-2.5 border rounded font-mono text-xs transition uppercase ${registerRole === 'TENANT' ? 'bg-gray-100 text-slate-700 border-slate-300/30' : 'bg-slate-50 text-zinc-650 border-gray-200 hover:border-gray-200'}`}
                     >
                       Renting Tenant
                     </button>
                     <button
                       type="button"
                       onClick={() => setRegisterRole('LANDLORD')}
-                      className={`py-2.5 border rounded font-mono text-xs transition uppercase ${registerRole === 'LANDLORD' ? 'bg-gray-100 text-slate-700 border-emerald-500/30' : 'bg-slate-50 text-zinc-650 border-gray-200 hover:border-gray-200'}`}
+                      className={`py-2.5 border rounded font-mono text-xs transition uppercase ${registerRole === 'LANDLORD' ? 'bg-gray-100 text-slate-700 border-slate-300/30' : 'bg-slate-50 text-zinc-650 border-gray-200 hover:border-gray-200'}`}
                     >
                       Property Landlord
                     </button>
@@ -2101,10 +2101,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <label className="text-[10px] text-gray-400 block">FULL NAME (OPTIONAL)</label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Chinedu Okafor" 
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-emerald-500 transition"
+                    <input
+                      type="text"
+                      placeholder="e.g. Chinedu Okafor"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-slate-300 transition"
                       value={loginName}
                       onChange={(e) => setLoginName(e.target.value)}
                     />
@@ -2113,10 +2113,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               </>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-2"
             >
               <Key className="w-4 h-4" />
               {loading ? "Authenticating..." : (authMode === 'login' ? "Log In to Console" : "Register & Settle Profile")}
@@ -2132,7 +2132,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   // ==========================================================
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900 font-sans flex overflow-hidden">
-      
+
       {/* Left Sidebar */}
       <aside className="w-64 border-r border-gray-200 bg-slate-50 flex flex-col justify-between shrink-0">
         <div>
@@ -2156,10 +2156,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <p className="text-[9px] text-gray-400 truncate">{userProfile?.email}</p>
               </div>
             </div>
-            
+
             {/* Upgrade banner if Tenant */}
             {userProfile?.role === 'TENANT' ? (
-              <button 
+              <button
                 onClick={handleUpgradeProfile}
                 className="w-full py-1 bg-slate-800/10 hover:bg-slate-800/20 border border-slate-300 text-slate-700 text-[10px] font-bold uppercase rounded transition tracking-wider"
               >
@@ -2176,7 +2176,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           <div className="p-4 border-b border-gray-200 bg-white">
             <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest block mb-2">ACTIVE WORKSPACE ROLE</span>
             <div className="flex items-center justify-between p-1 bg-slate-50 border border-gray-200 rounded-lg">
-              <button 
+              <button
                 onClick={() => {
                   if (userProfile?.role !== 'LANDLORD') {
                     alert("Landlord core workspace locked. Upgrade your profile to unlock Landlord switch!");
@@ -2188,7 +2188,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               >
                 Landlord
               </button>
-              <button 
+              <button
                 onClick={() => setUserRole('tenant')}
                 className={`flex-1 py-1 text-center font-bold text-xs rounded transition uppercase tracking-wider ${userRole === 'tenant' ? 'bg-slate-800 text-gray-900' : 'text-gray-400 hover:text-gray-700'}`}
               >
@@ -2204,65 +2204,65 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div>
                 <p className="px-3 text-[10px] font-mono font-semibold tracking-wider text-gray-400 uppercase">Landlord Dashboard</p>
                 <div className="mt-2 space-y-0.5">
-                  <button 
-                    onClick={() => setLandlordTab('overview')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'overview' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('overview')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'overview' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Compass className="w-4 h-4" />
                     Overview
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('properties')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'properties' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('properties')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'properties' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Building2 className="w-4 h-4" />
                     Properties Hub
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('leases')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'leases' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('leases')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'leases' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Users className="w-4 h-4" />
                     Lease Agreements
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('escrow')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'escrow' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('escrow')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'escrow' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Coins className="w-4 h-4" />
                     Purchase Escrows
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('payouts')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'payouts' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('payouts')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'payouts' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <ArrowLeftRight className="w-4 h-4" />
                     Payouts & Utilities
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('terminals')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('terminals')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <SmartphoneNfc className="w-4 h-4" />
                     POS Terminals
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('chat')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'chat' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('chat')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'chat' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Tenant Chats
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('unmatched')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'unmatched' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('unmatched')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'unmatched' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <ShieldAlert className="w-4 h-4" />
                     Unmatched Inflows
                   </button>
-                  <button 
-                    onClick={() => setLandlordTab('developer')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setLandlordTab('developer')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Terminal className="w-4 h-4" />
                     Developer Sandbox
@@ -2274,30 +2274,30 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div>
                 <p className="px-3 text-[10px] font-mono font-semibold tracking-wider text-gray-400 uppercase">Tenant Services</p>
                 <div className="mt-2 space-y-0.5">
-                  <button 
-                    onClick={() => setTenantTab('my-rent')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'my-rent' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setTenantTab('my-rent')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'my-rent' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Building2 className="w-4 h-4" />
                     My Lease Ledger
                   </button>
-                  <button 
-                    onClick={() => setTenantTab('marketplace')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'marketplace' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setTenantTab('marketplace')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'marketplace' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Compass className="w-4 h-4" />
                     Rent / Buy Marketplace
                   </button>
-                  <button 
-                    onClick={() => setTenantTab('receipts')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'receipts' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setTenantTab('receipts')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'receipts' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <Receipt className="w-4 h-4" />
                     Receipts Locker
                   </button>
-                  <button 
-                    onClick={() => setTenantTab('chat')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'chat' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
+                  <button
+                    onClick={() => setTenantTab('chat')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'chat' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Landlord Chat
@@ -2310,19 +2310,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-gray-200 space-y-2">
-          <button 
+          <button
             onClick={() => loadData()}
             className="w-full text-left px-3 py-1.5 hover:bg-white shadow-sm border border-gray-200 rounded text-xs text-gray-400 flex items-center gap-2 hover:text-gray-900 transition font-mono"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Sync Dashboard
           </button>
-          <button 
+          <button
             onClick={() => {
               setCurrentView('landing');
               setUserProfile(null);
               setLoginEmail('');
-            }} 
+            }}
             className="w-full text-left px-3 py-1.5 hover:bg-rose-950/20 rounded text-xs text-gray-400 flex items-center gap-2 hover:text-rose-400 transition"
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -2339,7 +2339,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             {userRole === 'tenant' && (
               <div className="flex items-center gap-2">
                 <label className="text-gray-400 font-mono text-[10px] uppercase">Select Active Tenancy:</label>
-                <select 
+                <select
                   className="bg-white shadow-sm border border-gray-200 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-900"
                   value={selectedTenancyId || ''}
                   onChange={(e) => setSelectedTenancyId(e.target.value)}
@@ -2352,7 +2352,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button className="p-2 rounded-2xl bg-white border border-gray-200 text-slate-600 hover:bg-slate-100 transition">
               <Search className="w-4 h-4" />
@@ -2373,13 +2373,13 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
         {/* Dynamic Inner Layout Body */}
         <div className="flex-1 overflow-y-auto p-8">
-          
+
           {/* ========================================================== */}
-          {/* ROLE: Landlord Views                                        */}
+          {/* ROLE: Landlord Views */}
           {/* ========================================================== */}
           {userRole === 'landlord' && (
             <div className="space-y-8 max-w-6xl">
-              
+
               {/* Landlord Tab: Overview */}
               {landlordTab === 'overview' && (
                 <div className="space-y-8">
@@ -2413,14 +2413,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   </div>
 
                   {properties.length === 0 && (
-                    <div className="p-6 border border-dashed border-emerald-500/30 bg-slate-800/5 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="p-6 border border-dashed border-slate-300/30 bg-slate-800/5 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div className="space-y-1">
                         <h4 className="font-bold text-sm text-gray-900">Database is currently empty</h4>
                         <p className="text-gray-500 text-xs font-mono">Initialize the console with default properties, landlords, leases, and escrows to test features.</p>
                       </div>
-                      <button 
+                      <button
                         onClick={() => seedDemoData()}
-                        className="px-4 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition shrink-0"
+                        className="px-4 py-2 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition shrink-0"
                       >
                         Seed Demo Dataset
                       </button>
@@ -2489,9 +2489,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold">Properties Hub</h3>
-                    <button 
+                    <button
                       onClick={() => setShowPropertyModal(true)}
-                      className="px-4 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
                     >
                       <Plus className="w-4 h-4" />
                       Create & List Property
@@ -2517,15 +2517,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               <span>Rooms / Flats:</span>
                               <span className="text-slate-700 font-semibold">{p.availableUnits != null ? p.availableUnits : 1} of {p.totalUnits != null ? p.totalUnits : 1} available</span>
                             </div>
-                            
+
                             <div className="flex flex-wrap gap-1.5 pt-1">
                               <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-semibold text-gray-700 rounded uppercase">{p.type}</span>
-                              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded uppercase ${
-                                p.status === 'SOLD' ? 'bg-gray-100 text-gray-500 border border-gray-300' :
+                              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded uppercase ${p.status === 'SOLD' ? 'bg-gray-100 text-gray-500 border border-gray-300' :
                                 p.status === 'LET' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                                p.status === 'LISTED' ? 'bg-slate-800/10 text-slate-700 border border-slate-300' :
-                                'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              }`}>{p.status}</span>
+                                  p.status === 'LISTED' ? 'bg-slate-800/10 text-slate-700 border border-slate-300' :
+                                    'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                }`}>{p.status}</span>
                               <span className={`px-2 py-0.5 text-[10px] font-semibold rounded uppercase ${p.verificationStatus === 'VERIFIED' ? 'bg-slate-800/10 text-slate-700' : 'bg-amber-500/10 text-amber-400'}`}>{p.verificationStatus}</span>
                             </div>
                           </div>
@@ -2535,19 +2534,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               <span>Virtual Account:</span>
                               <span className="text-gray-700">{vaId}</span>
                             </div>
-                            
+
                             {/* Caretaker details */}
                             <div className="flex justify-between items-center text-xs">
                               <span className="text-gray-400">Caretaker:</span>
                               {p.caretakerName ? (
                                 <span className="text-gray-700 font-semibold">{p.caretakerName}</span>
                               ) : (
-                                <button 
+                                <button
                                   onClick={() => {
                                     setCaretakerPropId(p.id);
                                     setShowCaretakerModal(true);
                                   }}
-                                  className="text-[10px] font-bold text-slate-700 hover:text-slate-900 underline"
+                                  className="text-[10px] font-bold text-slate-700 underline"
                                 >
                                   Assign Caretaker
                                 </button>
@@ -2562,12 +2561,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   {p.meterProvider}: {p.meterNumber}
                                 </span>
                               ) : (
-                                <button 
+                                <button
                                   onClick={() => {
                                     setMeterModalPropertyId(p.id);
                                     setShowMeterModal(true);
                                   }}
-                                  className="text-[10px] font-bold text-slate-700 hover:text-slate-900 underline"
+                                  className="text-[10px] font-bold text-slate-700 underline"
                                 >
                                   Link Meter
                                 </button>
@@ -2586,7 +2585,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold">Lease Agreements</h3>
-                    <button 
+                    <button
                       onClick={() => {
                         if (properties.length === 0) {
                           alert("Establish property listings first before linking tenancies.");
@@ -2594,7 +2593,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         }
                         setShowTenancyModal(true);
                       }}
-                      className="px-4 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
                     >
                       <Plus className="w-4 h-4" />
                       Link Lease Agreement
@@ -2721,7 +2720,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                 <button
                                   disabled={isActioning}
                                   onClick={() => setEscrowConfirm({ txn: e, action: 'release' })}
-                                  className="py-2 bg-slate-800 hover:bg-emerald-600 disabled:opacity-50 text-gray-900 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
+                                  className="py-2 bg-slate-800 disabled:opacity-50 text-gray-900 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
                                 >
                                   {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                                   Release Funds
@@ -2770,7 +2769,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <button
                             onClick={() => handleEscrowAction(escrowConfirm.txn, escrowConfirm.action)}
                             disabled={escrowActionLoading !== null}
-                            className={`flex-1 py-2 font-bold text-xs rounded-lg transition ${escrowConfirm.action === 'release' ? 'bg-slate-800 hover:bg-emerald-600 text-gray-900' : 'bg-red-500 hover:bg-red-600 text-gray-900'}`}
+                            className={`flex-1 py-2 font-bold text-xs rounded-lg transition ${escrowConfirm.action === 'release' ? 'bg-slate-800 text-gray-900' : 'bg-red-500 hover:bg-red-600 text-gray-900'}`}
                           >
                             {escrowActionLoading ? 'Processing...' : 'Confirm'}
                           </button>
@@ -2795,10 +2794,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       <h3 className="text-lg font-bold">POS Terminals Assignment</h3>
                       <p className="text-gray-500 text-sm mt-1">Monitor in-person payment devices assigned to your landlord account folders.</p>
                     </div>
-                    <button 
+                    <button
                       onClick={fetchNombaTerminals}
                       disabled={fetchingTerminals}
-                      className="px-4 py-2 bg-slate-800 hover:bg-emerald-600 disabled:bg-gray-100 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-800 disabled:bg-gray-100 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${fetchingTerminals ? 'animate-spin' : ''}`} />
                       Sync Nomba Terminals
@@ -2842,7 +2841,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="lg:col-span-4 border-r border-gray-200 bg-white shadow-sm border border-gray-200/10 p-4 space-y-2">
                       <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest block mb-2">Active Channels</p>
                       {activeChatroomProperties.map(p => (
-                        <div 
+                        <div
                           key={p.id}
                           onClick={() => setActiveChatPropertyId(p.id)}
                           className={`p-3 rounded-lg cursor-pointer transition font-mono text-xs ${activeChatPropertyId === p.id ? 'bg-slate-800/10 border border-slate-300 text-slate-700' : 'bg-slate-50 border border-gray-200 hover:border-gray-200 text-gray-500'}`}
@@ -2862,9 +2861,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         {chatLoading ? (
                           <p className="text-gray-400 text-xs font-mono text-center py-20">Loading conversations...</p>
                         ) : chatMessages.map(msg => (
-                          <div 
+                          <div
                             key={msg.id}
-                            className={`flex flex-col max-w-[70%] font-mono text-xs p-3 rounded-lg ${msg.senderEmail === userProfile.email ? 'ml-auto bg-slate-800/10 text-emerald-300 border border-slate-300' : 'mr-auto bg-white shadow-sm border border-gray-200 text-gray-700 border border-gray-200'}`}
+                            className={`flex flex-col max-w-[70%] font-mono text-xs p-3 rounded-lg ${msg.senderEmail === userProfile.email ? 'ml-auto bg-slate-800/10 text-slate-500 border border-slate-300' : 'mr-auto bg-white shadow-sm border border-gray-200 text-gray-700 border border-gray-200'}`}
                           >
                             <span className="text-[9px] text-gray-400 block mb-1">{msg.senderEmail === userProfile.email ? "You" : msg.senderEmail}</span>
                             <p className="text-gray-900">{msg.message}</p>
@@ -2874,16 +2873,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                       {/* Chat text input footer */}
                       <form onSubmit={handleSendChatMessage} className="p-4 border-t border-gray-200 bg-slate-50 flex gap-2">
-                        <input 
+                        <input
                           type="text"
                           placeholder="Type your message..."
                           className="flex-1 bg-white shadow-sm border border-gray-200 border border-zinc-855 rounded px-3 py-2 text-xs focus:outline-none focus:border-gray-300 text-gray-900"
                           value={chatInputText}
                           onChange={(e) => setChatInputText(e.target.value)}
                         />
-                        <button 
+                        <button
                           type="submit"
-                          className="px-4 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 rounded font-bold text-xs"
+                          className="px-4 py-2 bg-slate-800 text-gray-900 rounded font-bold text-xs"
                         >
                           Send
                         </button>
@@ -2908,11 +2907,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <ArrowLeftRight className="w-5 h-5 text-slate-700" />
                         <h3 className="font-bold text-sm text-gray-900">Bank Payout (Subaccount)</h3>
                       </div>
-                      
+
                       <form onSubmit={handleConfirmPayout} className="space-y-3 font-mono text-xs">
                         <div className="space-y-1">
                           <label className="text-[9px] text-gray-400">SELECT RECIPIENT BANK</label>
-                          <select 
+                          <select
                             className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none font-sans"
                             value={payoutBankCode}
                             onChange={(e) => setPayoutBankCode(e.target.value)}
@@ -2926,15 +2925,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <div className="space-y-1">
                           <label className="text-[9px] text-gray-400">ACCOUNT NUMBER</label>
                           <div className="flex gap-2">
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="10-digit number"
                               maxLength={10}
                               className="flex-1 bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                               value={payoutAcctNumber}
                               onChange={(e) => setPayoutAcctNumber(e.target.value)}
                             />
-                            <button 
+                            <button
                               type="button"
                               onClick={handleBankLookup}
                               disabled={payoutVerifying}
@@ -2953,8 +2952,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                         <div className="space-y-1">
                           <label className="text-[9px] text-gray-400">AMOUNT (NGN)</label>
-                          <input 
-                            type="number" 
+                          <input
+                            type="number"
                             placeholder="Amount in NGN"
                             className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                             value={payoutAmount}
@@ -2965,8 +2964,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                         <div className="space-y-1">
                           <label className="text-[9px] text-gray-400">SECURITY PIN (4 DIGITS)</label>
-                          <input 
-                            type="password" 
+                          <input
+                            type="password"
                             placeholder="••••"
                             maxLength={4}
                             className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
@@ -2976,9 +2975,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           />
                         </div>
 
-                        <button 
-                          type="submit" 
-                          className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded transition"
+                        <button
+                          type="submit"
+                          className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition"
                         >
                           Execute Bank Payout
                         </button>
@@ -3007,17 +3006,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <div className="space-y-3 font-mono text-xs">
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">FROM CURRENCY</label>
-                            <input 
-                              type="text" 
-                              value="NGN" 
-                              disabled 
-                              className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-400" 
+                            <input
+                              type="text"
+                              value="NGN"
+                              disabled
+                              className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-400"
                             />
                           </div>
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">TARGET CURRENCY</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none font-sans"
                               value={fxTargetCurrency}
                               onChange={(e) => setFxTargetCurrency(e.target.value)}
@@ -3029,17 +3028,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">CONVERT AMOUNT (NGN)</label>
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                               value={fxAmount}
                               onChange={(e) => setFxAmount(e.target.value)}
                             />
                           </div>
 
-                          <button 
+                          <button
                             onClick={handleFxConvert}
-                            className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded transition"
+                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition"
                           >
                             Calculate Conversion
                           </button>
@@ -3052,8 +3051,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           </div>
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">ENTER FX AUTHORIZATION OTP</label>
-                            <input 
-                              type="password" 
+                            <input
+                              type="password"
                               placeholder="6-digit verification code"
                               maxLength={6}
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
@@ -3061,9 +3060,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               onChange={(e) => setFxOtp(e.target.value)}
                             />
                           </div>
-                          <button 
+                          <button
                             onClick={handleConfirmFx}
-                            className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded transition"
+                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition"
                           >
                             Confirm Exchange Conversion
                           </button>
@@ -3086,25 +3085,25 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                       {/* Four-way bill switcher */}
                       <div className="grid grid-cols-4 gap-1 p-1 bg-slate-50 border border-gray-200 rounded">
-                        <button 
+                        <button
                           onClick={() => setUtilityType('electricity')}
                           className={`py-1.5 text-center text-[9px] font-bold rounded uppercase ${utilityType === 'electricity' ? 'bg-gray-100 text-slate-700' : 'text-gray-400'}`}
                         >
                           Power
                         </button>
-                        <button 
+                        <button
                           onClick={() => setUtilityType('airtime')}
                           className={`py-1.5 text-center text-[9px] font-bold rounded uppercase ${utilityType === 'airtime' ? 'bg-gray-100 text-slate-700' : 'text-gray-400'}`}
                         >
                           Airtime
                         </button>
-                        <button 
+                        <button
                           onClick={() => setUtilityType('cable')}
                           className={`py-1.5 text-center text-[9px] font-bold rounded uppercase ${utilityType === 'cable' ? 'bg-gray-100 text-slate-700' : 'text-gray-400'}`}
                         >
                           Cable
                         </button>
-                        <button 
+                        <button
                           onClick={() => setUtilityType('betting')}
                           className={`py-1.5 text-center text-[9px] font-bold rounded uppercase ${utilityType === 'betting' ? 'bg-gray-100 text-slate-700' : 'text-gray-400'}`}
                         >
@@ -3117,7 +3116,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           {/* Autofill selector */}
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">AUTO-FILL FROM PROPERTY METER</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs text-gray-900"
                               onChange={(e) => handleAutofillMeterSelection(e.target.value)}
                               defaultValue=""
@@ -3131,7 +3130,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">ELECTRICITY DISCO</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none"
                               value={discoCode}
                               onChange={(e) => setDiscoCode(e.target.value)}
@@ -3145,14 +3144,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">METER NUMBER</label>
                             <div className="flex gap-2">
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder="Meter serial number"
                                 className="flex-1 bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-900"
                                 value={meterNumber}
                                 onChange={(e) => setMeterNumber(e.target.value)}
                               />
-                              <button 
+                              <button
                                 type="button"
                                 onClick={handleCheckMeter}
                                 className="px-3 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded hover:bg-gray-100 text-[10px]"
@@ -3170,21 +3169,21 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">AMOUNT (NGN)</label>
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                               value={utilityAmount}
                               onChange={(e) => setUtilityAmount(e.target.value)}
                             />
                           </div>
 
-                          <button 
-                            type="submit" 
-                            className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded transition text-xs"
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition text-xs"
                           >
                             Vend Token
                           </button>
-                          
+
                           {utilityToken && (
                             <div className="p-3 bg-slate-50 border border-gray-200 rounded font-bold text-center tracking-wider text-slate-700 text-xs mt-2 select-all font-mono">
                               METER TOKEN: {utilityToken}
@@ -3197,7 +3196,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <form onSubmit={handleVendAirtime} className="space-y-3 font-mono text-xs">
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">NETWORK OPERATOR</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none"
                               value={airtimeCarrier}
                               onChange={(e) => setAirtimeCarrier(e.target.value)}
@@ -3211,8 +3210,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">PHONE NUMBER</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="e.g. +2348030000000"
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                               value={airtimePhone}
@@ -3223,7 +3222,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">VENDING PLAN</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none"
                               value={airtimePlan}
                               onChange={(e) => setAirtimePlan(e.target.value)}
@@ -3234,9 +3233,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             </select>
                           </div>
 
-                          <button 
-                            type="submit" 
-                            className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded transition text-xs"
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition text-xs"
                           >
                             Vend Airtime / Data
                           </button>
@@ -3247,7 +3246,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <form onSubmit={handleVendCableTv} className="space-y-3 font-mono text-xs">
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">CABLE PROVIDER</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none font-sans"
                               value={tvProvider}
                               onChange={(e) => setTvProvider(e.target.value)}
@@ -3261,15 +3260,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">SMARTCARD NUMBER</label>
                             <div className="flex gap-2">
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder="Smartcard number"
                                 className="flex-1 bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-900"
                                 value={tvSmartcard}
                                 onChange={(e) => setTvSmartcard(e.target.value)}
                                 required
                               />
-                              <button 
+                              <button
                                 type="button"
                                 onClick={handleVerifyCableTv}
                                 disabled={tvVerifying}
@@ -3288,7 +3287,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">SELECT TV PACKAGE</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none font-sans"
                               value={tvPackageCode}
                               onChange={(e) => setTvPackageCode(e.target.value)}
@@ -3299,9 +3298,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             </select>
                           </div>
 
-                          <button 
-                            type="submit" 
-                            className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded text-xs"
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded text-xs"
                           >
                             Vend Subscription
                           </button>
@@ -3318,7 +3317,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <form onSubmit={handleVendBetting} className="space-y-3 font-mono text-xs">
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">BETTING PROVIDER</label>
-                            <select 
+                            <select
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded text-xs focus:outline-none font-sans"
                               value={betProvider}
                               onChange={(e) => setBetProvider(e.target.value)}
@@ -3332,15 +3331,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">BETTING ACCOUNT ID</label>
                             <div className="flex gap-2">
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder="Player Customer ID"
                                 className="flex-1 bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-900"
                                 value={betCustomerId}
                                 onChange={(e) => setBetCustomerId(e.target.value)}
                                 required
                               />
-                              <button 
+                              <button
                                 type="button"
                                 onClick={handleVerifyBetId}
                                 disabled={betVerifying}
@@ -3359,8 +3358,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <div className="space-y-1">
                             <label className="text-[9px] text-gray-400">TOPUP AMOUNT (NGN)</label>
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                               value={betAmount}
                               onChange={(e) => setBetAmount(e.target.value)}
@@ -3368,9 +3367,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             />
                           </div>
 
-                          <button 
-                            type="submit" 
-                            className="w-full py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded text-xs"
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded text-xs"
                           >
                             Vend Betting Topup
                           </button>
@@ -3414,7 +3413,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             <td className="p-4 text-rose-400 uppercase font-semibold">{p.matchedStatus}</td>
                             <td className="p-4 text-gray-500">{new Date(p.receivedAt).toLocaleString()}</td>
                             <td className="p-4">
-                              <button 
+                              <button
                                 onClick={() => alert("Mapping dialog triggered.")}
                                 className="px-2.5 py-1 bg-gray-100 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded text-[11px] font-semibold"
                               >
@@ -3450,21 +3449,21 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                   {/* Webhook logs viewer tabs */}
                   <div className="border-b border-zinc-855 flex gap-4 text-xs font-mono">
-                    <button 
+                    <button
                       onClick={() => setSimulatorSubTab('playground')}
-                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'playground' ? 'text-slate-700 border-b-2 border-emerald-500' : 'text-gray-400 hover:text-gray-900'}`}
+                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'playground' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-900'}`}
                     >
                       [⚡] API Playground Explorer (38+ APIs)
                     </button>
-                    <button 
+                    <button
                       onClick={() => setSimulatorSubTab('trigger')}
-                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'trigger' ? 'text-slate-700 border-b-2 border-emerald-500' : 'text-gray-400 hover:text-gray-900'}`}
+                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'trigger' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-900'}`}
                     >
                       [+] Webhook Simulator
                     </button>
-                    <button 
+                    <button
                       onClick={() => setSimulatorSubTab('logs')}
-                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'logs' ? 'text-slate-700 border-b-2 border-emerald-500' : 'text-gray-400 hover:text-gray-900'}`}
+                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'logs' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-900'}`}
                     >
                       [-] Event Logs ({webhookLogs.length})
                     </button>
@@ -3475,10 +3474,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                       <div className="lg:col-span-4 space-y-2 max-h-[550px] overflow-y-auto pr-2 border-r border-gray-200">
                         {APIS_METADATA.map((api, idx) => (
-                          <div 
+                          <div
                             key={api.name}
                             onClick={() => setSelectedApiIndex(idx)}
-                            className={`p-3 border rounded-lg cursor-pointer transition text-left space-y-1.5 ${selectedApiIndex === idx ? 'bg-white shadow-sm border border-gray-200 border-emerald-500/50' : 'bg-white shadow-sm border border-gray-200/10 border-gray-200 hover:border-gray-200'}`}
+                            className={`p-3 border rounded-lg cursor-pointer transition text-left space-y-1.5 ${selectedApiIndex === idx ? 'bg-white shadow-sm border border-gray-200 border-slate-300/50' : 'bg-white shadow-sm border border-gray-200/10 border-gray-200 hover:border-gray-200'}`}
                           >
                             <div className="flex items-center justify-between">
                               <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${api.method === 'POST' ? 'bg-blue-500/10 text-blue-400' : api.method === 'GET' ? 'bg-slate-800/10 text-slate-700' : 'bg-rose-500/10 text-rose-400'}`}>
@@ -3510,17 +3509,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                             <div className="space-y-1.5">
                               <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest block">Request Payload JSON (Editable)</span>
-                              <textarea 
+                              <textarea
                                 className="w-full h-32 p-3 bg-slate-50 border border-gray-200 rounded font-mono text-[10px] text-gray-700 focus:outline-none focus:border-gray-200 transition"
                                 value={requestBodyInput}
                                 onChange={(e) => setRequestBodyInput(e.target.value)}
                               />
                             </div>
 
-                            <button 
+                            <button
                               onClick={handleExecutePlaygroundApi}
                               disabled={apiLoading}
-                              className="px-5 py-2.5 bg-slate-800 hover:bg-emerald-600 disabled:bg-gray-100 disabled:text-gray-400 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center gap-1.5"
+                              className="px-5 py-2.5 bg-slate-800 disabled:bg-gray-100 disabled:text-gray-400 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center gap-1.5"
                             >
                               <Send className="w-4 h-4" />
                               {apiLoading ? "Sending Request..." : "Run Sandbox API"}
@@ -3545,10 +3544,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                       <div className="lg:col-span-5 space-y-2 max-h-[500px] overflow-y-auto pr-2">
                         {webhookLogs.map((log) => (
-                          <div 
-                            key={log.id} 
+                          <div
+                            key={log.id}
                             onClick={() => setSelectedLogId(log.id)}
-                            className={`p-4 border rounded-lg cursor-pointer transition text-left space-y-2 ${selectedLogId === log.id ? 'bg-white shadow-sm border border-gray-200 border-emerald-500/50' : 'bg-white border-gray-200 hover:border-gray-200'}`}
+                            className={`p-4 border rounded-lg cursor-pointer transition text-left space-y-2 ${selectedLogId === log.id ? 'bg-white shadow-sm border border-gray-200 border-slate-300/50' : 'bg-white border-gray-200 hover:border-gray-200'}`}
                           >
                             <div className="flex items-center justify-between text-[10px] font-mono">
                               <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
@@ -3594,11 +3593,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           )}
 
           {/* ========================================================== */}
-          {/* ROLE: Tenant Views                                          */}
+          {/* ROLE: Tenant Views */}
           {/* ========================================================== */}
           {userRole === 'tenant' && (
             <div className="space-y-8 max-w-6xl">
-              
+
               {/* Tenant Tab: My Lease Profile */}
               {tenantTab === 'my-rent' && (
                 <div className="space-y-8">
@@ -3644,7 +3643,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <div className="text-xs space-y-1.5 text-gray-400">
                             <p>Virtual Account Number: <span className="text-slate-700 font-semibold">{activeTenantTenancyObj.nombaVirtualAccountId}</span></p>
                             <p>Next Rent Due Date: <span className="text-gray-900">{activeTenantTenancyObj.nextDueDate}</span></p>
-                            
+
                             {/* Caretaker details */}
                             {activeTenantTenancyObj.property.caretakerName && (
                               <p className="p-2 bg-white shadow-sm border border-gray-200/50 border border-gray-200 rounded text-[11px] text-gray-700">
@@ -3660,12 +3659,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   {activeTenantTenancyObj.property.meterProvider}: {activeTenantTenancyObj.property.meterNumber}
                                 </span>
                               ) : (
-                                <button 
+                                <button
                                   onClick={() => {
                                     setMeterModalPropertyId(activeTenantTenancyObj.property.id);
                                     setShowMeterModal(true);
                                   }}
-                                  className="text-[10px] font-bold text-slate-700 hover:text-slate-900 underline"
+                                  className="text-[10px] font-bold text-slate-700 underline"
                                 >
                                   Link Meter
                                 </button>
@@ -3682,7 +3681,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <p className="text-gray-400 text-[10px] max-w-xs font-mono uppercase tracking-wider">
                             {activeTenantTenancyObj.balance === 0 ? 'No outstanding balance due' : (activeTenantTenancyObj.balance > 0 ? 'Overpayment Applied as rent credit' : 'Arrears due for payment')}
                           </p>
-                          <button 
+                          <button
                             onClick={() => {
                               setCheckoutTenancy(activeTenantTenancyObj);
                               setCheckoutOption('exact');
@@ -3690,7 +3689,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               setPayMethod('flash');
                               setShowCheckout(true);
                             }}
-                            className="px-6 py-2.5 bg-slate-900 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
+                            className="px-6 py-2.5 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
                           >
                             Pay Rent / Simulate Inflow
                           </button>
@@ -3707,22 +3706,22 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <button
                             type="button"
                             onClick={() => setTenantTab('marketplace')}
-                            className="px-6 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition"
+                            className="px-6 py-2 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition"
                           >
                             Browse Houses Marketplace
                           </button>
                         </div>
-                        
+
                         <form onSubmit={handleClaimTenancy} className="flex gap-2 max-w-sm mx-auto font-mono text-xs">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             placeholder="Virtual Account reference"
                             className="flex-1 bg-slate-50 border border-gray-200 px-3 py-2 rounded focus:outline-none"
                             value={claimVaNumber}
                             onChange={(e) => setClaimVaNumber(e.target.value)}
                             required
                           />
-                          <button type="submit" className="px-4 bg-slate-900 hover:bg-slate-700 text-white rounded font-bold uppercase tracking-wider">Link</button>
+                          <button type="submit" className="px-4 text-white rounded font-bold uppercase tracking-wider">Link</button>
                         </form>
                       </div>
                     </div>
@@ -3770,7 +3769,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             {/* Property Image */}
                             {p.imageUrl ? (
                               <div className="relative h-44 overflow-hidden">
-                                <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" onError={(e) => e.target.parentElement.style.display='none'} />
+                                <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" onError={(e) => e.target.parentElement.style.display = 'none'} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
                                 <div className="absolute top-2 left-2 flex gap-1.5">
                                   <span className="px-2 py-0.5 bg-slate-800/90 text-gray-900 rounded text-[9px] uppercase tracking-wider font-bold backdrop-blur">{p.type}</span>
@@ -3827,8 +3826,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   <div className="grid grid-cols-5 gap-1">
                                     {projections.map((v, i) => (
                                       <div key={i} className="text-center">
-                                        <div className="text-[8px] text-zinc-600">Yr{i+1}</div>
-                                        <div className="text-[9px] text-gray-700 font-bold">₦{(v/1000).toFixed(0)}k</div>
+                                        <div className="text-[8px] text-zinc-600">Yr{i + 1}</div>
+                                        <div className="text-[9px] text-gray-700 font-bold">₦{(v / 1000).toFixed(0)}k</div>
                                       </div>
                                     ))}
                                   </div>
@@ -3857,7 +3856,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   setPayMethod('flash');
                                   setShowCheckout(true);
                                 }}
-                                className="mt-auto w-full py-2.5 bg-slate-900 hover:bg-slate-700 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
+                                className="mt-auto w-full py-2.5 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
                               >
                                 {p.type === 'RENT' ? 'Rent via Nomba' : 'Buy via Nomba Escrow'}
                               </button>
@@ -3865,7 +3864,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               {/* Environmental Analysis Button */}
                               <button
                                 onClick={() => handleEnvAnalysis(p)}
-                                className="w-full py-2 bg-white shadow-sm border border-gray-200 hover:bg-gray-100 border border-gray-300 hover:border-emerald-500/40 text-gray-700 hover:text-slate-900 font-semibold rounded-lg font-sans transition text-xs flex items-center justify-center gap-1.5"
+                                className="w-full py-2 bg-white shadow-sm border border-gray-200 hover:bg-gray-100 border border-gray-300 hover:border-slate-400/40 text-gray-700 font-semibold rounded-lg font-sans transition text-xs flex items-center justify-center gap-1.5"
                               >
                                 <Activity className="w-3.5 h-3.5" />
                                 Check Environmental Analysis
@@ -3908,7 +3907,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       <div className="flex flex-col items-center justify-center py-20 gap-4">
                         <div className="relative">
                           <div className="w-12 h-12 rounded-full border-2 border-gray-200" />
-                          <div className="w-12 h-12 rounded-full border-2 border-t-emerald-400 animate-spin absolute inset-0" />
+                          <div className="w-12 h-12 rounded-full border-2 border-t-slate-400 animate-spin absolute inset-0" />
                         </div>
                         <div className="text-center">
                           <p className="text-gray-700 text-sm font-semibold">Analyzing environment...</p>
@@ -3936,16 +3935,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     {envAnalysis.report && !envAnalysis.loading && (() => {
                       const r = envAnalysis.report;
                       const sections = [
-                        { key: 'security',     label: 'Security',       icon: ShieldCheck,  color: 'amber' },
-                        { key: 'flood',        label: 'Flood Risk',     icon: Activity,     color: 'blue'  },
-                        { key: 'electricity',  label: 'Electricity',    icon: Zap,          color: 'yellow'},
-                        { key: 'neighborhood', label: 'Neighborhood',   icon: Compass,      color: 'emerald'},
+                        { key: 'security', label: 'Security', icon: ShieldCheck, color: 'amber' },
+                        { key: 'flood', label: 'Flood Risk', icon: Activity, color: 'blue' },
+                        { key: 'electricity', label: 'Electricity', icon: Zap, color: 'yellow' },
+                        { key: 'neighborhood', label: 'Neighborhood', icon: Compass, color: 'emerald' },
                       ];
                       const colorMap = {
-                        amber:   { text: 'text-amber-400',   bg: 'bg-amber-500/8',   border: 'border-amber-500/20' },
-                        blue:    { text: 'text-blue-400',    bg: 'bg-blue-500/8',    border: 'border-blue-500/20'  },
-                        yellow:  { text: 'text-yellow-400',  bg: 'bg-yellow-500/8',  border: 'border-yellow-500/20'},
-                        emerald: { text: 'text-slate-700', bg: 'bg-slate-800/8', border: 'border-slate-300'},
+                        amber: { text: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/20' },
+                        blue: { text: 'text-blue-400', bg: 'bg-blue-500/8', border: 'border-blue-500/20' },
+                        yellow: { text: 'text-yellow-400', bg: 'bg-yellow-500/8', border: 'border-yellow-500/20' },
+                        emerald: { text: 'text-slate-700', bg: 'bg-slate-800/8', border: 'border-slate-300' },
                       };
                       return (
                         <div className="p-5 space-y-3">
@@ -3990,8 +3989,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {userReceipts.map(rec => (
-                      <div 
-                        key={rec.id} 
+                      <div
+                        key={rec.id}
                         onClick={() => setSelectedReceipt(rec)}
                         className="p-5 border border-gray-200 bg-white hover:border-gray-200 rounded-lg cursor-pointer space-y-3 font-mono text-xs text-left transition"
                       >
@@ -4029,7 +4028,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="lg:col-span-4 border-r border-gray-200 bg-white shadow-sm border border-gray-200/10 p-4 space-y-2">
                       <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest block mb-2">My Leased Channels</p>
                       {activeChatroomProperties.map(p => (
-                        <div 
+                        <div
                           key={p.id}
                           onClick={() => setActiveChatPropertyId(p.id)}
                           className={`p-3 rounded-lg cursor-pointer transition font-mono text-xs ${activeChatPropertyId === p.id ? 'bg-slate-800/10 border border-slate-300 text-slate-700' : 'bg-slate-50 border border-gray-200 hover:border-gray-200 text-gray-500'}`}
@@ -4049,9 +4048,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         {chatLoading ? (
                           <p className="text-gray-400 text-xs font-mono text-center py-20">Loading conversations...</p>
                         ) : chatMessages.map(msg => (
-                          <div 
+                          <div
                             key={msg.id}
-                            className={`flex flex-col max-w-[70%] font-mono text-xs p-3 rounded-lg ${msg.senderEmail === userProfile.email ? 'ml-auto bg-slate-800/10 text-emerald-300 border border-slate-300' : 'mr-auto bg-white shadow-sm border border-gray-200 text-gray-700 border border-gray-200'}`}
+                            className={`flex flex-col max-w-[70%] font-mono text-xs p-3 rounded-lg ${msg.senderEmail === userProfile.email ? 'ml-auto bg-slate-800/10 text-slate-500 border border-slate-300' : 'mr-auto bg-white shadow-sm border border-gray-200 text-gray-700 border border-gray-200'}`}
                           >
                             <span className="text-[9px] text-gray-400 block mb-1">{msg.senderEmail === userProfile.email ? "You" : msg.senderEmail}</span>
                             <p className="text-gray-900">{msg.message}</p>
@@ -4061,16 +4060,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                       {/* Chat text input footer */}
                       <form onSubmit={handleSendChatMessage} className="p-4 border-t border-gray-200 bg-slate-50 flex gap-2">
-                        <input 
+                        <input
                           type="text"
                           placeholder="Type your message..."
                           className="flex-1 bg-white shadow-sm border border-gray-200 border border-zinc-855 rounded px-3 py-2 text-xs focus:outline-none focus:border-gray-300 text-gray-900"
                           value={chatInputText}
                           onChange={(e) => setChatInputText(e.target.value)}
                         />
-                        <button 
+                        <button
                           type="submit"
-                          className="px-4 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 rounded font-bold text-xs"
+                          className="px-4 py-2 bg-slate-800 text-gray-900 rounded font-bold text-xs"
                         >
                           Send
                         </button>
@@ -4086,7 +4085,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       </main>
 
       {/* ========================================================== */}
-      {/* DIALOGS / MODALS / OVERLAYS                                */}
+      {/* DIALOGS / MODALS / OVERLAYS */}
       {/* ========================================================== */}
 
       {/* MODAL: Rent Checkout Simulator */}
@@ -4119,15 +4118,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <div className="space-y-1">
                     <label className="text-[9px] font-mono text-gray-400 block uppercase">SELECT PAYMENT METHOD</label>
                     <div className="grid grid-cols-2 gap-2">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setPayMethod('flash')}
                         className={`py-2 rounded font-bold text-xs uppercase transition ${payMethod === 'flash' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-400 border border-gray-200'}`}
                       >
                         Flash Account
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setPayMethod('card')}
                         className={`py-2 rounded font-bold text-xs uppercase transition ${payMethod === 'card' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-400 border border-gray-200'}`}
                       >
@@ -4139,29 +4138,29 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <div className="space-y-1">
                     <label className="text-[9px] font-mono text-gray-400 block uppercase">Choose Payment Amount Option</label>
                     <div className="grid grid-cols-2 gap-2">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setCheckoutOption('exact')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'exact' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}
                       >
                         Exact Rent Due
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setCheckoutOption('partial')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'partial' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}
                       >
                         Partial Pay
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setCheckoutOption('overpaid')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'overpaid' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}
                       >
                         Overpay Rent
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setCheckoutOption('custom')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'custom' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}
                       >
@@ -4178,7 +4177,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <div className="space-y-1 pb-2 border-b border-gray-200">
                           <label className="text-[9px] font-mono text-gray-400 block uppercase">PAY WITH SAVED CARD</label>
                           <div className="flex gap-2">
-                            <select 
+                            <select
                               className="flex-1 bg-slate-50 border border-gray-200 p-2 rounded text-xs text-gray-900 focus:outline-none"
                               value={selectedSavedCard}
                               onChange={(e) => setSelectedSavedCard(e.target.value)}
@@ -4189,7 +4188,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               ))}
                             </select>
                             {selectedSavedCard && (
-                              <button 
+                              <button
                                 type="button"
                                 onClick={() => handleRevokeCardToken(selectedSavedCard)}
                                 className="p-2 bg-rose-950/20 border border-rose-900/50 hover:bg-rose-900/20 text-rose-400 rounded"
@@ -4205,43 +4204,43 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       {!selectedSavedCard && (
                         <div className="space-y-2">
                           <span className="text-[9px] font-mono text-gray-400 block uppercase">INPUT NEW CARD DETAILS</span>
-                          <input 
-                            type="text" 
-                            placeholder="CARDHOLDER NAME" 
+                          <input
+                            type="text"
+                            placeholder="CARDHOLDER NAME"
                             className="w-full bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
                             value={checkoutCardForm.name}
-                            onChange={(e) => setCheckoutCardForm({...checkoutCardForm, name: e.target.value})}
+                            onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, name: e.target.value })}
                           />
-                          <input 
-                            type="text" 
-                            placeholder="16-DIGIT CARD NUMBER" 
+                          <input
+                            type="text"
+                            placeholder="16-DIGIT CARD NUMBER"
                             className="w-full bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
                             value={checkoutCardForm.number}
-                            onChange={(e) => setCheckoutCardForm({...checkoutCardForm, number: e.target.value})}
+                            onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, number: e.target.value })}
                           />
                           <div className="grid grid-cols-3 gap-2">
-                            <input 
-                              type="text" 
-                              placeholder="MM/YY" 
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
                               className="bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
                               value={checkoutCardForm.expiry}
-                              onChange={(e) => setCheckoutCardForm({...checkoutCardForm, expiry: e.target.value})}
+                              onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, expiry: e.target.value })}
                             />
-                            <input 
-                              type="password" 
-                              placeholder="CVV" 
+                            <input
+                              type="password"
+                              placeholder="CVV"
                               maxLength={3}
                               className="bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
                               value={checkoutCardForm.cvv}
-                              onChange={(e) => setCheckoutCardForm({...checkoutCardForm, cvv: e.target.value})}
+                              onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, cvv: e.target.value })}
                             />
-                            <input 
-                              type="password" 
-                              placeholder="PIN" 
+                            <input
+                              type="password"
+                              placeholder="PIN"
                               maxLength={4}
                               className="bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
                               value={checkoutCardForm.pin}
-                              onChange={(e) => setCheckoutCardForm({...checkoutCardForm, pin: e.target.value})}
+                              onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, pin: e.target.value })}
                             />
                           </div>
                         </div>
@@ -4257,8 +4256,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       {checkoutOption === 'partial' && `₦${(checkoutTenancy.rentAmount * 0.75).toLocaleString()}`}
                       {checkoutOption === 'overpaid' && `₦${(checkoutTenancy.rentAmount * 1.25).toLocaleString()}`}
                       {checkoutOption === 'custom' && (
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           placeholder="Amount in NGN"
                           className="bg-transparent border-b border-gray-300 text-gray-900 font-extrabold focus:outline-none w-28 text-right pr-1"
                           value={customPayAmount}
@@ -4292,7 +4291,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       <span className="text-slate-700 font-bold">₦{checkoutOption === 'exact' ? checkoutTenancy.rentAmount.toLocaleString() : (checkoutOption === 'partial' ? (checkoutTenancy.rentAmount * 0.75).toLocaleString() : (checkoutOption === 'overpaid' ? (checkoutTenancy.rentAmount * 1.25).toLocaleString() : parseFloat(customPayAmount).toLocaleString()))}</span>
                     </div>
                   </div>
-                  
+
                   <div className="text-[10px] text-gray-400 flex gap-2">
                     <Info className="w-3.5 h-3.5 shrink-0 text-amber-500" />
                     <p>Copy the account details and perform a transfer. Once complete, click the confirm payment completion button below.</p>
@@ -4308,9 +4307,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <p className="text-gray-500 text-[11px]">Enter the 6-digit confirmation code sent to your phone number +234*****32 to authenticate card charge.</p>
                   <div className="space-y-1">
                     <label className="text-[9px] text-gray-400">VERIFICATION OTP</label>
-                    <input 
-                      type="password" 
-                      placeholder="e.g. 123456" 
+                    <input
+                      type="password"
+                      placeholder="e.g. 123456"
                       maxLength={6}
                       className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-900"
                       value={checkoutOtp}
@@ -4347,15 +4346,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             <div className="p-6 border-t border-gray-200 bg-white shadow-sm border border-gray-200/10 flex gap-3">
               {paymentStatus === null ? (
                 <>
-                  <button 
+                  <button
                     disabled={isPaying}
                     onClick={handleCheckoutPortalPay}
-                    className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 disabled:bg-zinc-700 disabled:text-gray-500 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2 bg-slate-800 disabled:bg-zinc-700 disabled:text-gray-500 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center justify-center gap-1.5"
                   >
                     {isPaying ? 'Processing...' : 'Authorize Pay'}
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setShowCheckout(false)}
                     className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                   >
@@ -4364,29 +4363,29 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 </>
               ) : paymentStatus === 'flash_details' ? (
                 <>
-                  <button 
+                  <button
                     onClick={async () => {
                       setIsPaying(true);
                       let amt = checkoutTenancy.rentAmount;
                       if (checkoutOption === 'partial') amt = checkoutTenancy.rentAmount * 0.75;
                       if (checkoutOption === 'overpaid') amt = checkoutTenancy.rentAmount * 1.25;
                       if (checkoutOption === 'custom') amt = parseFloat(customPayAmount) || 0;
-                      
+
                       if (checkoutTenancy.isMarketplacePurchase) {
                         await handleMarketplaceCheckout(checkoutTenancy.property);
                       } else {
                         await executePaymentSimulation(amt, checkoutTenancy.nombaVirtualAccountId);
                       }
-                      
+
                       setPaymentStatus('success');
                       setIsPaying(false);
                     }}
-                    className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                    className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
                   >
                     I have Transferred Dues
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setPaymentStatus(null)}
                     className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                   >
@@ -4395,14 +4394,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 </>
               ) : paymentStatus === 'otp_prompt' ? (
                 <>
-                  <button 
+                  <button
                     onClick={handleSubmitCardOtp}
-                    className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                    className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
                   >
                     Submit OTP Code
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setPaymentStatus(null)}
                     className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                   >
@@ -4410,8 +4409,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   </button>
                 </>
               ) : (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowCheckout(false)}
                   className="w-full py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
@@ -4438,7 +4437,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 block uppercase">Property Title</label>
                 <input type="text" placeholder="e.g. Eko Atlantic Towers, Apt 4B"
-                  className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-slate-300/50"
                   value={newProp.title} onChange={(e) => setNewProp({ ...newProp, title: e.target.value })} required />
               </div>
 
@@ -4447,7 +4446,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <label className="text-[10px] text-gray-400 block uppercase">Property Photo <span className="text-zinc-600">(optional)</span></label>
                 <label
                   htmlFor="prop-image-upload"
-                  className="flex flex-col items-center justify-center gap-2 w-full h-32 border-2 border-dashed border-gray-300 hover:border-emerald-500/50 rounded-lg cursor-pointer bg-white shadow-sm border border-gray-200/50 transition group"
+                  className="flex flex-col items-center justify-center gap-2 w-full h-32 border-2 border-dashed border-gray-300 hover:border-slate-400/50 rounded-lg cursor-pointer bg-white shadow-sm border border-gray-200/50 transition group"
                 >
                   {propImagePreview ? (
                     <img src={propImagePreview} alt="preview" className="w-full h-full object-cover rounded-lg" />
@@ -4542,7 +4541,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="space-y-1">
                       <label className="text-[10px] text-gray-400 block uppercase">First Payment (NGN)</label>
                       <input type="number" placeholder="e.g. 1200000"
-                        className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-300 rounded text-xs text-gray-900 focus:outline-none focus:border-emerald-500/50"
+                        className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-300 rounded text-xs text-gray-900 focus:outline-none focus:border-slate-300/50"
                         value={newProp.firstPaymentAmount} onChange={(e) => setNewProp({ ...newProp, firstPaymentAmount: e.target.value })} />
                     </div>
                     <div className="space-y-1">
@@ -4559,9 +4558,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <div className="space-y-1">
                     <label className="text-[10px] text-gray-400 block uppercase">Annual Rent Projections — Year 1 → 5 (NGN)</label>
                     <div className="grid grid-cols-5 gap-1.5">
-                      {[0,1,2,3,4].map(i => (
+                      {[0, 1, 2, 3, 4].map(i => (
                         <div key={i} className="space-y-0.5">
-                          <span className="text-[9px] text-zinc-600 block text-center">Yr {i+1}</span>
+                          <span className="text-[9px] text-zinc-600 block text-center">Yr {i + 1}</span>
                           <input type="number" placeholder="0"
                             className="w-full px-2 py-1.5 bg-white shadow-sm border border-gray-200 border border-gray-300 rounded text-[10px] text-gray-900 focus:outline-none text-center"
                             value={newProp.annualProjections[i]}
@@ -4605,7 +4604,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
               <div className="flex gap-2 pt-1 font-sans">
                 <button type="submit"
-                  className="flex-1 py-2.5 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider">
+                  className="flex-1 py-2.5 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider">
                   List Property
                 </button>
                 <button type="button" onClick={() => setShowPropertyModal(false)}
@@ -4626,11 +4625,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <h3 className="text-lg font-bold">Link Utility Meter to Property</h3>
               <p className="text-gray-500 text-xs mt-1">Bind a physical electricity/disco meter directly to this rental asset folder.</p>
             </div>
-            
+
             <form onSubmit={handleLinkMeter} className="space-y-3 font-mono text-xs">
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400">METER PROVIDER / DISCO</label>
-                <select 
+                <select
                   className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300 font-sans"
                   value={meterFormProvider}
                   onChange={(e) => setMeterFormProvider(e.target.value)}
@@ -4645,8 +4644,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400">METER SERIAL NUMBER</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="11-digit Meter Number"
                   className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300"
                   value={meterFormNumber}
@@ -4656,14 +4655,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               </div>
 
               <div className="flex gap-2 pt-3 font-sans">
-                <button 
-                  type="submit" 
-                  className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
                   Link Meter
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowMeterModal(false)}
                   className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
@@ -4683,16 +4682,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <h3 className="text-lg font-bold">Assign House Caretaker</h3>
               <p className="text-gray-500 text-xs mt-1">Designate a building supervisor caretaker to coordinate maintenance requests.</p>
             </div>
-            
+
             <form onSubmit={handleAssignCaretaker} className="space-y-3 font-mono text-xs">
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400">CARETAKER FULL NAME</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. John Doe"
                   className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300"
                   value={caretakerForm.name}
-                  onChange={(e) => setCaretakerForm({...caretakerForm, name: e.target.value})}
+                  onChange={(e) => setCaretakerForm({ ...caretakerForm, name: e.target.value })}
                   required
                 />
               </div>
@@ -4700,37 +4699,37 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] text-gray-400">CARETAKER EMAIL</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     placeholder="john@caretaker.com"
                     className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300"
                     value={caretakerForm.email}
-                    onChange={(e) => setCaretakerForm({...caretakerForm, email: e.target.value})}
+                    onChange={(e) => setCaretakerForm({ ...caretakerForm, email: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-gray-400">CARETAKER PHONE</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="+234 803..."
                     className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none"
                     value={caretakerForm.phone}
-                    onChange={(e) => setCaretakerForm({...caretakerForm, phone: e.target.value})}
+                    onChange={(e) => setCaretakerForm({ ...caretakerForm, phone: e.target.value })}
                     required
                   />
                 </div>
               </div>
 
               <div className="flex gap-2 pt-3 font-sans">
-                <button 
-                  type="submit" 
-                  className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
                   Assign Caretaker
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowCaretakerModal(false)}
                   className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
@@ -4777,7 +4776,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <span className="text-gray-400">TIMESTAMP:</span>
                 <span className="text-gray-900">{new Date(selectedReceipt.createdAt).toLocaleString()}</span>
               </div>
-              
+
               <div className="pt-2">
                 <span className="text-gray-400 block mb-1">TRANSACTION DETAILS:</span>
                 <p className="text-gray-700 leading-normal bg-slate-50 p-2.5 rounded border border-gray-200">{selectedReceipt.details}</p>
@@ -4791,14 +4790,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
             {/* Receipt Footer Buttons */}
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => alert("Simulating PDF Download...")}
-                className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 font-sans"
+                className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 font-sans"
               >
                 <Download className="w-4 h-4" />
                 Download PDF
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedReceipt(null)}
                 className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs uppercase tracking-wider rounded transition font-sans"
               >
@@ -4814,11 +4813,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         <div className="fixed inset-0 z-50 bg-white/75 backdrop-blur flex items-center justify-center p-4">
           <div className="bg-slate-50 border border-gray-200 p-6 rounded-lg w-full max-w-md space-y-4">
             <h3 className="text-lg font-bold">Establish Tenancy Agreement</h3>
-            
+
             <form onSubmit={handleCreateTenancy} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-mono text-gray-400 block uppercase">Link Property</label>
-                <select 
+                <select
                   value={newTenancy.propertyId}
                   onChange={(e) => setNewTenancy({ ...newTenancy, propertyId: e.target.value })}
                   className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300 transition"
@@ -4839,19 +4838,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="space-y-1">
                 <label className="text-[10px] font-mono text-gray-400 block uppercase font-mono">Nomba Virtual Account ID (Unique)</label>
                 <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    placeholder="e.g. va_eko_atlantic_rent" 
+                  <input
+                    type="text"
+                    placeholder="e.g. va_eko_atlantic_rent"
                     className="flex-1 px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300 transition font-mono"
                     value={newTenancy.nombaVirtualAccountId}
                     onChange={(e) => setNewTenancy({ ...newTenancy, nombaVirtualAccountId: e.target.value })}
                     required
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleProvisionVirtualAccount}
                     disabled={isProvisioningVa}
-                    className="px-3 bg-slate-800 hover:bg-emerald-600 disabled:bg-gray-100 disabled:text-gray-400 rounded text-xs font-bold text-gray-900 transition whitespace-nowrap"
+                    className="px-3 bg-slate-800 disabled:bg-gray-100 disabled:text-gray-400 rounded text-xs font-bold text-gray-900 transition whitespace-nowrap"
                   >
                     {isProvisioningVa ? "Provisioning..." : "Auto-Provision via Nomba"}
                   </button>
@@ -4861,8 +4860,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-mono text-gray-400 block uppercase">Rent Amount (NGN)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300 transition"
                     value={newTenancy.rentAmount}
                     onChange={(e) => setNewTenancy({ ...newTenancy, rentAmount: e.target.value })}
@@ -4871,7 +4870,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-mono text-gray-400 block uppercase">Frequency</label>
-                  <select 
+                  <select
                     className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300 transition"
                     value={newTenancy.frequency}
                     onChange={(e) => setNewTenancy({ ...newTenancy, frequency: e.target.value })}
@@ -4884,8 +4883,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
               <div className="space-y-1">
                 <label className="text-[10px] font-mono text-gray-400 block uppercase">Next Rent Due Date</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-gray-300 transition"
                   value={newTenancy.nextDueDate}
                   onChange={(e) => setNewTenancy({ ...newTenancy, nextDueDate: e.target.value })}
@@ -4894,14 +4893,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               </div>
 
               <div className="flex gap-2 pt-3">
-                <button 
-                  type="submit" 
-                  className="flex-1 py-2 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
                   Establish
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowTenancyModal(false)}
                   className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
                 >
