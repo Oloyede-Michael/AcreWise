@@ -14,6 +14,11 @@ export default defineConfig({
         target: 'https://acrewise-9zrp.onrender.com/graphql',
         changeOrigin: true,
       },
+      '/api/nim': {
+        target: 'https://integrate.api.nvidia.com/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/nim/, ''),
+      },
       '/api': {
         target: 'https://acrewise-9zrp.onrender.com/api',
         changeOrigin: true,
