@@ -2206,63 +2206,63 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="mt-2 space-y-0.5">
                   <button 
                     onClick={() => setLandlordTab('overview')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'overview' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'overview' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Compass className="w-4 h-4" />
                     Overview
                   </button>
                   <button 
                     onClick={() => setLandlordTab('properties')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'properties' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'properties' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Building2 className="w-4 h-4" />
                     Properties Hub
                   </button>
                   <button 
                     onClick={() => setLandlordTab('leases')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'leases' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'leases' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Users className="w-4 h-4" />
                     Lease Agreements
                   </button>
                   <button 
                     onClick={() => setLandlordTab('escrow')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'escrow' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'escrow' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Coins className="w-4 h-4" />
                     Purchase Escrows
                   </button>
                   <button 
                     onClick={() => setLandlordTab('payouts')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'payouts' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'payouts' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <ArrowLeftRight className="w-4 h-4" />
                     Payouts & Utilities
                   </button>
                   <button 
                     onClick={() => setLandlordTab('terminals')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <SmartphoneNfc className="w-4 h-4" />
                     POS Terminals
                   </button>
                   <button 
                     onClick={() => setLandlordTab('chat')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'chat' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'chat' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Tenant Chats
                   </button>
                   <button 
                     onClick={() => setLandlordTab('unmatched')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'unmatched' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'unmatched' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <ShieldAlert className="w-4 h-4" />
                     Unmatched Inflows
                   </button>
                   <button 
                     onClick={() => setLandlordTab('developer')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Terminal className="w-4 h-4" />
                     Developer Sandbox
@@ -2276,28 +2276,28 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="mt-2 space-y-0.5">
                   <button 
                     onClick={() => setTenantTab('my-rent')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'my-rent' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'my-rent' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Building2 className="w-4 h-4" />
                     My Lease Ledger
                   </button>
                   <button 
                     onClick={() => setTenantTab('marketplace')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'marketplace' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'marketplace' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Compass className="w-4 h-4" />
                     Rent / Buy Marketplace
                   </button>
                   <button 
                     onClick={() => setTenantTab('receipts')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'receipts' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'receipts' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <Receipt className="w-4 h-4" />
                     Receipts Locker
                   </button>
                   <button 
                     onClick={() => setTenantTab('chat')} 
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'chat' ? 'bg-white shadow-sm border border-gray-200 text-gray-900 font-semibold border-l-2 border-emerald-400' : 'text-gray-500 hover:bg-white shadow-sm border border-gray-200/50 hover:text-gray-900'}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'chat' ? 'bg-slate-900/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 hover:text-slate-900'}`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Landlord Chat
@@ -2353,8 +2353,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             )}
           </div>
           
-          <div className="flex items-center gap-6">
-            <span className="hidden md:inline text-gray-400 font-mono text-[10px]">
+          <div className="flex items-center gap-2">
+            <button className="p-2 rounded-2xl bg-white border border-gray-200 text-slate-600 hover:bg-slate-100 transition">
+              <Search className="w-4 h-4" />
+            </button>
+            <button className="p-2 rounded-2xl bg-white border border-gray-200 text-slate-600 hover:bg-slate-100 transition">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+            <button className="p-2 rounded-2xl bg-white border border-gray-200 text-slate-600 hover:bg-slate-100 transition">
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            <span className="text-gray-400 font-mono text-[10px]">
               Active User: <span className="text-slate-700 font-bold">{userProfile?.email}</span>
             </span>
           </div>
@@ -3679,7 +3690,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               setPayMethod('flash');
                               setShowCheckout(true);
                             }}
-                            className="px-6 py-2.5 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition shadow"
+                            className="px-6 py-2.5 bg-slate-900 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
                           >
                             Pay Rent / Simulate Inflow
                           </button>
@@ -3711,7 +3722,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             onChange={(e) => setClaimVaNumber(e.target.value)}
                             required
                           />
-                          <button type="submit" className="px-4 bg-slate-800 hover:bg-emerald-600 text-gray-900 rounded font-bold uppercase tracking-wider">Link</button>
+                          <button type="submit" className="px-4 bg-slate-900 hover:bg-slate-700 text-white rounded font-bold uppercase tracking-wider">Link</button>
                         </form>
                       </div>
                     </div>
@@ -3846,7 +3857,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   setPayMethod('flash');
                                   setShowCheckout(true);
                                 }}
-                                className="mt-auto w-full py-2.5 bg-slate-800 hover:bg-emerald-600 text-gray-900 font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
+                                className="mt-auto w-full py-2.5 bg-slate-900 hover:bg-slate-700 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
                               >
                                 {p.type === 'RENT' ? 'Rent via Nomba' : 'Buy via Nomba Escrow'}
                               </button>
