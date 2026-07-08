@@ -2116,7 +2116,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-2"
             >
               <Key className="w-4 h-4" />
               {loading ? "Authenticating..." : (authMode === 'login' ? "Log In to Console" : "Register & Settle Profile")}
@@ -2184,13 +2184,13 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   }
                   setUserRole('landlord');
                 }}
-                className={`flex-1 py-1 text-center font-bold text-xs rounded transition uppercase tracking-wider ${userRole === 'landlord' ? 'bg-slate-800 text-gray-900' : 'text-gray-400 hover:text-gray-700'}`}
+                className={`flex-1 py-1 text-center font-bold text-xs rounded transition uppercase tracking-wider ${userRole === 'landlord' ? 'bg-slate-900 text-white' : 'text-gray-400 hover:text-gray-700'}`}
               >
                 Landlord
               </button>
               <button
                 onClick={() => setUserRole('tenant')}
-                className={`flex-1 py-1 text-center font-bold text-xs rounded transition uppercase tracking-wider ${userRole === 'tenant' ? 'bg-slate-800 text-gray-900' : 'text-gray-400 hover:text-gray-700'}`}
+                className={`flex-1 py-1 text-center font-bold text-xs rounded transition uppercase tracking-wider ${userRole === 'tenant' ? 'bg-slate-900 text-white' : 'text-gray-400 hover:text-gray-700'}`}
               >
                 Tenant
               </button>
@@ -2206,63 +2206,63 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="mt-2 space-y-0.5">
                   <button
                     onClick={() => setLandlordTab('overview')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'overview' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'overview' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Compass className="w-4 h-4" />
                     Overview
                   </button>
                   <button
                     onClick={() => setLandlordTab('properties')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'properties' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'properties' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Building2 className="w-4 h-4" />
                     Properties Hub
                   </button>
                   <button
                     onClick={() => setLandlordTab('leases')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'leases' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'leases' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Users className="w-4 h-4" />
                     Lease Agreements
                   </button>
                   <button
                     onClick={() => setLandlordTab('escrow')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'escrow' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'escrow' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Coins className="w-4 h-4" />
                     Purchase Escrows
                   </button>
                   <button
                     onClick={() => setLandlordTab('payouts')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'payouts' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'payouts' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <ArrowLeftRight className="w-4 h-4" />
                     Payouts & Utilities
                   </button>
                   <button
                     onClick={() => setLandlordTab('terminals')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <SmartphoneNfc className="w-4 h-4" />
                     POS Terminals
                   </button>
                   <button
                     onClick={() => setLandlordTab('chat')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'chat' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'chat' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Tenant Chats
                   </button>
                   <button
                     onClick={() => setLandlordTab('unmatched')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'unmatched' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'unmatched' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <ShieldAlert className="w-4 h-4" />
                     Unmatched Inflows
                   </button>
                   <button
                     onClick={() => setLandlordTab('developer')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Terminal className="w-4 h-4" />
                     Developer Sandbox
@@ -2276,28 +2276,28 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="mt-2 space-y-0.5">
                   <button
                     onClick={() => setTenantTab('my-rent')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'my-rent' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'my-rent' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Building2 className="w-4 h-4" />
                     My Lease Ledger
                   </button>
                   <button
                     onClick={() => setTenantTab('marketplace')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'marketplace' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'marketplace' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Compass className="w-4 h-4" />
                     Rent / Buy Marketplace
                   </button>
                   <button
                     onClick={() => setTenantTab('receipts')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'receipts' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'receipts' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Receipt className="w-4 h-4" />
                     Receipts Locker
                   </button>
                   <button
                     onClick={() => setTenantTab('chat')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'chat' ? '/5 shadow-sm border border-gray-200 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 shadow-sm border border-gray-200/70 '}`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${tenantTab === 'chat' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Landlord Chat
@@ -2420,7 +2420,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       </div>
                       <button
                         onClick={() => seedDemoData()}
-                        className="px-4 py-2 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition shrink-0"
+                        className="px-4 py-2 bg-slate-900 text-white font-bold text-xs uppercase tracking-wider rounded transition shrink-0"
                       >
                         Seed Demo Dataset
                       </button>
@@ -2491,7 +2491,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <h3 className="text-lg font-bold">Properties Hub</h3>
                     <button
                       onClick={() => setShowPropertyModal(true)}
-                      className="px-4 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded transition flex items-center gap-1.5"
                     >
                       <Plus className="w-4 h-4" />
                       Create & List Property
@@ -2593,7 +2593,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         }
                         setShowTenancyModal(true);
                       }}
-                      className="px-4 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded transition flex items-center gap-1.5"
                     >
                       <Plus className="w-4 h-4" />
                       Link Lease Agreement
@@ -2769,7 +2769,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <button
                             onClick={() => handleEscrowAction(escrowConfirm.txn, escrowConfirm.action)}
                             disabled={escrowActionLoading !== null}
-                            className={`flex-1 py-2 font-bold text-xs rounded-lg transition ${escrowConfirm.action === 'release' ? 'bg-slate-800 text-gray-900' : 'bg-red-500 hover:bg-red-600 text-gray-900'}`}
+                            className={`flex-1 py-2 font-bold text-xs rounded-lg transition ${escrowConfirm.action === 'release' ? 'bg-slate-900 text-white' : 'bg-red-500 hover:bg-red-600 text-gray-900'}`}
                           >
                             {escrowActionLoading ? 'Processing...' : 'Confirm'}
                           </button>
@@ -2882,7 +2882,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         />
                         <button
                           type="submit"
-                          className="px-4 py-2 bg-slate-800 text-gray-900 rounded font-bold text-xs"
+                          className="px-4 py-2 bg-slate-900 text-white rounded font-bold text-xs"
                         >
                           Send
                         </button>
@@ -2977,7 +2977,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                         <button
                           type="submit"
-                          className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition"
+                          className="w-full py-2 bg-slate-900 text-white font-bold rounded transition"
                         >
                           Execute Bank Payout
                         </button>
@@ -3038,7 +3038,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <button
                             onClick={handleFxConvert}
-                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition"
+                            className="w-full py-2 bg-slate-900 text-white font-bold rounded transition"
                           >
                             Calculate Conversion
                           </button>
@@ -3062,7 +3062,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           </div>
                           <button
                             onClick={handleConfirmFx}
-                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition"
+                            className="w-full py-2 bg-slate-900 text-white font-bold rounded transition"
                           >
                             Confirm Exchange Conversion
                           </button>
@@ -3179,7 +3179,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <button
                             type="submit"
-                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition text-xs"
+                            className="w-full py-2 bg-slate-900 text-white font-bold rounded transition text-xs"
                           >
                             Vend Token
                           </button>
@@ -3235,7 +3235,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <button
                             type="submit"
-                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded transition text-xs"
+                            className="w-full py-2 bg-slate-900 text-white font-bold rounded transition text-xs"
                           >
                             Vend Airtime / Data
                           </button>
@@ -3300,7 +3300,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <button
                             type="submit"
-                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded text-xs"
+                            className="w-full py-2 bg-slate-900 text-white font-bold rounded text-xs"
                           >
                             Vend Subscription
                           </button>
@@ -3369,7 +3369,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                           <button
                             type="submit"
-                            className="w-full py-2 bg-slate-800 text-gray-900 font-bold rounded text-xs"
+                            className="w-full py-2 bg-slate-900 text-white font-bold rounded text-xs"
                           >
                             Vend Betting Topup
                           </button>
@@ -3706,7 +3706,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <button
                             type="button"
                             onClick={() => setTenantTab('marketplace')}
-                            className="px-6 py-2 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition"
+                            className="px-6 py-2 bg-slate-900 text-white font-bold text-xs uppercase tracking-wider rounded transition"
                           >
                             Browse Houses Marketplace
                           </button>
@@ -3721,7 +3721,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             onChange={(e) => setClaimVaNumber(e.target.value)}
                             required
                           />
-                          <button type="submit" className="px-4 text-white rounded font-bold uppercase tracking-wider">Link</button>
+                          <button type="submit" className="px-4 bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase tracking-wider">Link</button>
                         </form>
                       </div>
                     </div>
@@ -4069,7 +4069,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         />
                         <button
                           type="submit"
-                          className="px-4 py-2 bg-slate-800 text-gray-900 rounded font-bold text-xs"
+                          className="px-4 py-2 bg-slate-900 text-white rounded font-bold text-xs"
                         >
                           Send
                         </button>
@@ -4380,7 +4380,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       setPaymentStatus('success');
                       setIsPaying(false);
                     }}
-                    className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                    className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
                   >
                     I have Transferred Dues
                   </button>
@@ -4396,7 +4396,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <>
                   <button
                     onClick={handleSubmitCardOtp}
-                    className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                    className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
                   >
                     Submit OTP Code
                   </button>
@@ -4604,7 +4604,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
               <div className="flex gap-2 pt-1 font-sans">
                 <button type="submit"
-                  className="flex-1 py-2.5 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider">
+                  className="flex-1 py-2.5 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider">
                   List Property
                 </button>
                 <button type="button" onClick={() => setShowPropertyModal(false)}
@@ -4657,7 +4657,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="flex gap-2 pt-3 font-sans">
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                  className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
                 >
                   Link Meter
                 </button>
@@ -4724,7 +4724,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="flex gap-2 pt-3 font-sans">
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                  className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
                 >
                   Assign Caretaker
                 </button>
@@ -4792,7 +4792,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             <div className="flex gap-2">
               <button
                 onClick={() => alert("Simulating PDF Download...")}
-                className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 font-sans"
+                className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 font-sans"
               >
                 <Download className="w-4 h-4" />
                 Download PDF
@@ -4895,7 +4895,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="flex gap-2 pt-3">
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-slate-800 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider"
+                  className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
                 >
                   Establish
                 </button>
