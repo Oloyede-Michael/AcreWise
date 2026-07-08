@@ -15,6 +15,7 @@ This system provides a full sandbox environment that mocks and simulates live ba
 6. [Nomba Webhook Signature Hashing & Verification](#6-nomba-webhook-signature-hashing--verification)
 7. [Step-by-Step Simulation Guidelines](#7-step-by-step-simulation-guidelines)
 8. [Troubleshooting & FAQs](#8-troubleshooting--faqs)
+9. To learn how to use the app go to howtouse.md
 
 ---
 
