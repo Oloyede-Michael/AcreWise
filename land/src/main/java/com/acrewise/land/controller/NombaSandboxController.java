@@ -32,60 +32,48 @@ public class NombaSandboxController {
 
         log.info("Sandbox Execution Request: {} ({} {})", name, method, url);
 
-        // Determine if this endpoint can be proxied to the real Nomba Sandbox environment
-        boolean canProxy = url.equals("/v1/transfers/banks") || 
-                           url.equals("/v1/transfers/bank/lookup") ||
-                           url.equals("/v1/accounts/balance") ||
-                           url.startsWith("/v1/accounts/balance/") ||
-                           url.equals("/v1/accounts/virtual") ||
-                           url.startsWith("/v1/accounts/virtual/");
-
-        if (canProxy) {
-            return authService.getAccessToken()
-                .flatMap(token -> {
-                    if ("GET".equalsIgnoreCase(method)) {
-                        return webClient.get()
-                            .uri(url)
-                            .header("Authorization", "Bearer " + token)
-                            .header("accountId", accountId)
-                            .retrieve()
-                            .bodyToMono(Map.class)
-                            .map(ResponseEntity::ok);
-                    } else if ("POST".equalsIgnoreCase(method)) {
-                        return webClient.post()
-                            .uri(url)
-                            .header("Authorization", "Bearer " + token)
-                            .header("accountId", accountId)
-                            .bodyValue(body != null ? body : Map.of())
-                            .retrieve()
-                            .bodyToMono(Map.class)
-                            .map(ResponseEntity::ok);
-                    } else if ("PUT".equalsIgnoreCase(method)) {
-                        return webClient.put()
-                            .uri(url)
-                            .header("Authorization", "Bearer " + token)
-                            .header("accountId", accountId)
-                            .bodyValue(body != null ? body : Map.of())
-                            .retrieve()
-                            .bodyToMono(Map.class)
-                            .map(ResponseEntity::ok);
-                    } else {
-                        return webClient.delete()
-                            .uri(url)
-                            .header("Authorization", "Bearer " + token)
-                            .header("accountId", accountId)
-                            .retrieve()
-                            .bodyToMono(Map.class)
-                            .map(ResponseEntity::ok);
-                    }
-                })
-                .onErrorResume(err -> {
-                    log.warn("Nomba Sandbox live call failed: {}. Falling back to mocked responses.", err.getMessage());
-                    return Mono.just(ResponseEntity.ok((Map) request.get("mockResponse")));
-                });
-        }
-
-        // Default mock response fallback matching OpenAPI/Markdown documentation exactly
-        return Mono.just(ResponseEntity.ok((Map) request.get("mockResponse")));
+        // Proxy ALL requests to the real Nomba API. On failure, fall back to the provided mock response.
+        return authService.getAccessToken()
+            .flatMap(token -> {
+                if ("GET".equalsIgnoreCase(method)) {
+                    return webClient.get()
+                        .uri(url)
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", accountId)
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .map(ResponseEntity::ok);
+                } else if ("POST".equalsIgnoreCase(method)) {
+                    return webClient.post()
+                        .uri(url)
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", accountId)
+                        .bodyValue(body != null ? body : Map.of())
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .map(ResponseEntity::ok);
+                } else if ("PUT".equalsIgnoreCase(method)) {
+                    return webClient.put()
+                        .uri(url)
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", accountId)
+                        .bodyValue(body != null ? body : Map.of())
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .map(ResponseEntity::ok);
+                } else {
+                    return webClient.delete()
+                        .uri(url)
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", accountId)
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .map(ResponseEntity::ok);
+                }
+            })
+            .onErrorResume(err -> {
+                log.warn("Nomba API call failed for {}: {}. Falling back to mocked response.", url, err.getMessage());
+                return Mono.just(ResponseEntity.ok((Map) request.get("mockResponse")));
+            });
     }
 }

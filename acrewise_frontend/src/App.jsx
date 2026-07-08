@@ -25,7 +25,7 @@ import {
   Code2,
   Lock,
   UserCheck,
-  CreditCard,
+
   ArrowDownCircle,
   Receipt,
   ToggleLeft,
@@ -144,12 +144,9 @@ export default function App() {
   const [checkoutTenancy, setCheckoutTenancy] = useState(null);
   const [checkoutOption, setCheckoutOption] = useState('exact'); // exact, partial, overpaid, custom
   const [customPayAmount, setCustomPayAmount] = useState('');
-  const [payMethod, setPayMethod] = useState('flash'); // flash, card
   const [isPaying, setIsPaying] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState(null); // null, otp_prompt, success, error
-  const [checkoutOtp, setCheckoutOtp] = useState('');
-  const [checkoutFlashAcct, setCheckoutFlashAcct] = useState(null);
-  const [checkoutCardForm, setCheckoutCardForm] = useState({ name: '', number: '', expiry: '', cvv: '', pin: '' });
+  const [paymentStatus, setPaymentStatus] = useState(null); // null, redirecting, verifying, success, error
+  const [checkoutOrderRef, setCheckoutOrderRef] = useState('');
 
   // Tokenized Saved Cards
   const [tokenizedCards, setTokenizedCards] = useState([
@@ -1569,7 +1566,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
   }
 
-  // Checkout modal pay
+  // Checkout modal pay — creates a real Nomba online checkout order and redirects
   async function handleCheckoutPortalPay() {
     let amt = checkoutTenancy.rentAmount;
     if (checkoutOption === 'partial') amt = checkoutTenancy.rentAmount * 0.75;
@@ -1578,117 +1575,84 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
     setIsPaying(true);
 
-    if (payMethod === 'flash') {
-      // Flash payment
-      const flashSpec = APIS_METADATA.find(a => a.name === "Fetch checkout Flash account number for transfer payment.");
-      try {
-        const res = await fetch('/api/nomba-sandbox/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: flashSpec.name,
-            method: flashSpec.method,
-            url: flashSpec.url,
-            body: {},
-            mockResponse: flashSpec.responseBody
-          })
-        });
-        const data = await res.json();
-        setCheckoutFlashAcct(data.data);
-        setPaymentStatus('flash_details');
-      } catch (err) {
-        setPaymentStatus('error');
-      }
-      setIsPaying(false);
-    } else {
-      // Card payment
-      if (selectedSavedCard) {
-        // Pay directly with saved card token
-        alert(`Paying ₦${amt.toLocaleString()} securely using Saved Card token ${selectedSavedCard}...`);
-        if (checkoutTenancy.isMarketplacePurchase) {
-          await handleMarketplaceCheckout(checkoutTenancy.property);
-        } else {
-          await executePaymentSimulation(amt, checkoutTenancy.nombaVirtualAccountId);
-          // Save Receipt
-          await saveReceipt("Rent Payment", "RENT", amt, "SAVED_CRD_" + Math.random().toString(36).substring(2, 10), `Secure card token payment for property virtual account: ${checkoutTenancy.nombaVirtualAccountId}`);
-        }
+    const orderRef = "ord_" + Math.random().toString(36).substring(2, 14) + Date.now().toString(36);
+    setCheckoutOrderRef(orderRef);
 
-        setPaymentStatus('success');
-        setIsPaying(false);
-        return;
-      }
-
-      const cardSpec = APIS_METADATA.find(a => a.name === "Submit customer card details");
-      try {
-        const res = await fetch('/api/nomba-sandbox/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: cardSpec.name,
-            method: cardSpec.method,
-            url: cardSpec.url,
-            body: {
-              cardNumber: checkoutCardForm.number,
-              cvv: checkoutCardForm.cvv,
-              expiry: checkoutCardForm.expiry
-            },
-            mockResponse: cardSpec.responseBody
-          })
-        });
-        const data = await res.json();
-        if (data.data.authType === "OTP_REQUIRED") {
-          setPaymentStatus('otp_prompt');
-        } else {
-          setPaymentStatus('error');
-        }
-      } catch (err) {
-        setPaymentStatus('error');
-      }
-      setIsPaying(false);
-    }
-  }
-
-  // Submit Card OTP to finalize card charge
-  async function handleSubmitCardOtp() {
-    setIsPaying(true);
-    const otpSpec = APIS_METADATA.find(a => a.name === "Submit customer card OTP");
-
-    let amt = checkoutTenancy.rentAmount;
-    if (checkoutOption === 'partial') amt = checkoutTenancy.rentAmount * 0.75;
-    if (checkoutOption === 'overpaid') amt = checkoutTenancy.rentAmount * 1.25;
-    if (checkoutOption === 'custom') amt = parseFloat(customPayAmount) || 0;
+    const callbackUrl = "https://acrewise-9zrp.onrender.com/api/webhooks/nomba";
+    const checkoutOrderSpec = APIS_METADATA.find(a => a.name === "Create an online checkout order");
 
     try {
       const res = await fetch('/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: otpSpec.name,
-          method: otpSpec.method,
-          url: otpSpec.url,
+          name: checkoutOrderSpec.name,
+          method: checkoutOrderSpec.method,
+          url: checkoutOrderSpec.url,
           body: {
-            reference: "ref_card_init_92910",
-            otp: checkoutOtp
+            amount: amt,
+            orderReference: orderRef,
+            callbackUrl: callbackUrl,
+            customerId: userProfile?.email || "customer@acrewise.com"
           },
-          mockResponse: otpSpec.responseBody
+          mockResponse: checkoutOrderSpec.responseBody
         })
       });
       const data = await res.json();
-      if (data.data.status === "SUCCESS") {
-        if (checkoutTenancy.isMarketplacePurchase) {
-          await handleMarketplaceCheckout(checkoutTenancy.property);
-        } else {
-          await executePaymentSimulation(amt, checkoutTenancy.nombaVirtualAccountId);
-          // Save Receipt
-          await saveReceipt("Rent Payment", "RENT", amt, "CRD_CHG_" + Math.random().toString(36).substring(2, 10), `Debit Card Charge verification successful for account: ${checkoutTenancy.nombaVirtualAccountId}`);
-        }
-
-        setPaymentStatus('success');
+      if (data && data.code === "00" && data.data && data.data.checkoutUrl) {
+        setPaymentStatus('redirecting');
+        // Save the order reference then redirect to Nomba hosted checkout
+        await saveReceipt(
+          checkoutTenancy.isMarketplacePurchase ? "Marketplace Purchase" : "Rent Payment",
+          checkoutTenancy.isMarketplacePurchase ? "PURCHASE" : "RENT",
+          amt,
+          orderRef,
+          `Nomba checkout order created. Redirecting to payment page for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}`
+        );
+        // Short delay so the user sees the status before redirect
+        setTimeout(() => {
+          window.location.href = data.data.checkoutUrl;
+        }, 800);
       } else {
         setPaymentStatus('error');
       }
     } catch (err) {
       setPaymentStatus('error');
+    }
+    setIsPaying(false);
+  }
+
+  // Verify order status after returning from Nomba checkout
+  async function handleVerifyCheckoutOrder() {
+    if (!checkoutOrderRef) return;
+    setIsPaying(true);
+    const amt = checkoutTenancy.rentAmount;
+    const orderSpec = APIS_METADATA.find(a => a.name && a.name.includes("Get Order details"));
+    try {
+      const res = await fetch('/api/nomba-sandbox/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: orderSpec.name,
+          method: "GET",
+          url: `/v1/checkout/order/${checkoutOrderRef}`,
+          body: {},
+          mockResponse: orderSpec.responseBody
+        })
+      });
+      const data = await res.json();
+      if (data && data.code === "00" && data.data && data.data.status === "PAID") {
+        setPaymentStatus('success');
+        if (checkoutTenancy.isMarketplacePurchase) {
+          await handleMarketplaceCheckout(checkoutTenancy.property);
+        } else {
+          await executePaymentSimulation(amt, checkoutTenancy.nombaVirtualAccountId);
+        }
+      } else {
+        alert("Payment has not been confirmed yet. Please try again or check your Nomba transaction history.");
+      }
+    } catch (err) {
+      alert("Could not verify order status. Please check your Nomba transaction history.");
     }
     setIsPaying(false);
   }
@@ -3686,7 +3650,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               setCheckoutTenancy(activeTenantTenancyObj);
                               setCheckoutOption('exact');
                               setPaymentStatus(null);
-                              setPayMethod('flash');
                               setShowCheckout(true);
                             }}
                             className="px-6 py-2.5 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
@@ -3853,7 +3816,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   setCheckoutTenancy(mockTen);
                                   setCheckoutOption('exact');
                                   setPaymentStatus(null);
-                                  setPayMethod('flash');
                                   setShowCheckout(true);
                                 }}
                                 className="mt-auto w-full py-2.5 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
@@ -4088,167 +4050,43 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       {/* DIALOGS / MODALS / OVERLAYS */}
       {/* ========================================================== */}
 
-      {/* MODAL: Rent Checkout Simulator */}
+      {/* MODAL: Nomba Online Checkout */}
       {showCheckout && checkoutTenancy && (
         <div className="fixed inset-0 z-50 bg-white backdrop-blur flex items-center justify-center p-4">
           <div className="bg-slate-50 border border-gray-200 rounded-xl w-full max-w-md overflow-hidden flex flex-col justify-between">
-            {/* Header */}
             <div className="p-6 border-b border-gray-200 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-800/10 flex items-center justify-center text-slate-700">
-                <CreditCard className="w-5 h-5" />
+                <ExternalLink className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900">Nomba Multi-Checkout Portal</h3>
-                <span className="text-[10px] font-mono text-gray-400">Secure Direct Card or Bank Flash Pay</span>
+                <h3 className="font-bold text-sm text-gray-900">Nomba Online Checkout</h3>
+                <span className="text-[10px] font-mono text-gray-400">Secured by Nomba Payment Gateway</span>
               </div>
             </div>
 
-            {/* Content Body */}
             <div className="p-6 space-y-4 flex-1">
               {paymentStatus === null ? (
-                /* Payment form configure */
                 <div className="space-y-4">
                   <div className="p-3 bg-white shadow-sm border border-gray-200/30 rounded border border-gray-200 font-mono text-[11px] space-y-1">
-                    <p className="text-gray-400">Property: <span className="text-gray-900 font-bold">{checkoutTenancy.property.title}</span></p>
-                    <p className="text-gray-400">Monthly Rent: <span className="text-gray-900 font-bold">₦{checkoutTenancy.rentAmount.toLocaleString()}</span></p>
-                    <p className="text-gray-400">Virtual Account: <span className="text-slate-700 font-semibold">{checkoutTenancy.nombaVirtualAccountId}</span></p>
-                  </div>
-
-                  {/* Payment Method Switcher */}
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-mono text-gray-400 block uppercase">SELECT PAYMENT METHOD</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPayMethod('flash')}
-                        className={`py-2 rounded font-bold text-xs uppercase transition ${payMethod === 'flash' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-400 border border-gray-200'}`}
-                      >
-                        Flash Account
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPayMethod('card')}
-                        className={`py-2 rounded font-bold text-xs uppercase transition ${payMethod === 'card' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-400 border border-gray-200'}`}
-                      >
-                        Credit Card Pay
-                      </button>
-                    </div>
+                    <p className="text-gray-400">Property: <span className="text-gray-900 font-bold">{checkoutTenancy.property?.title || 'N/A'}</span></p>
+                    <p className="text-gray-400">Amount Due: <span className="text-gray-900 font-bold">₦{checkoutTenancy.rentAmount?.toLocaleString() || '0'}</span></p>
+                    <p className="text-gray-400">Reference: <span className="text-slate-700 font-semibold">{checkoutTenancy.nombaVirtualAccountId}</span></p>
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[9px] font-mono text-gray-400 block uppercase">Choose Payment Amount Option</label>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutOption('exact')}
-                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'exact' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}
-                      >
-                        Exact Rent Due
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutOption('partial')}
-                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'partial' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}
-                      >
-                        Partial Pay
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutOption('overpaid')}
-                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'overpaid' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}
-                      >
-                        Overpay Rent
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutOption('custom')}
-                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'custom' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}
-                      >
-                        Custom Amount
-                      </button>
+                      <button type="button" onClick={() => setCheckoutOption('exact')}
+                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'exact' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}>Exact Rent Due</button>
+                      <button type="button" onClick={() => setCheckoutOption('partial')}
+                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'partial' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}>Partial Pay</button>
+                      <button type="button" onClick={() => setCheckoutOption('overpaid')}
+                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'overpaid' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}>Overpay Rent</button>
+                      <button type="button" onClick={() => setCheckoutOption('custom')}
+                        className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'custom' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}>Custom Amount</button>
                     </div>
                   </div>
 
-                  {/* Card payment section (Saved or New) */}
-                  {payMethod === 'card' && (
-                    <div className="space-y-3 p-3 bg-white shadow-sm border border-gray-200/10 border border-gray-200 rounded font-sans text-xs">
-                      {/* Saved Cards selector */}
-                      {tokenizedCards.length > 0 && (
-                        <div className="space-y-1 pb-2 border-b border-gray-200">
-                          <label className="text-[9px] font-mono text-gray-400 block uppercase">PAY WITH SAVED CARD</label>
-                          <div className="flex gap-2">
-                            <select
-                              className="flex-1 bg-slate-50 border border-gray-200 p-2 rounded text-xs text-gray-900 focus:outline-none"
-                              value={selectedSavedCard}
-                              onChange={(e) => setSelectedSavedCard(e.target.value)}
-                            >
-                              <option value="">-- CHOOSE SAVED CARD --</option>
-                              {tokenizedCards.map(c => (
-                                <option key={c.id} value={c.cardToken}>{c.brand} ending in {c.last4} ({c.expiry})</option>
-                              ))}
-                            </select>
-                            {selectedSavedCard && (
-                              <button
-                                type="button"
-                                onClick={() => handleRevokeCardToken(selectedSavedCard)}
-                                className="p-2 bg-rose-950/20 border border-rose-900/50 hover:bg-rose-900/20 text-rose-400 rounded"
-                                title="Revoke Authorization Token"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {!selectedSavedCard && (
-                        <div className="space-y-2">
-                          <span className="text-[9px] font-mono text-gray-400 block uppercase">INPUT NEW CARD DETAILS</span>
-                          <input
-                            type="text"
-                            placeholder="CARDHOLDER NAME"
-                            className="w-full bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
-                            value={checkoutCardForm.name}
-                            onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, name: e.target.value })}
-                          />
-                          <input
-                            type="text"
-                            placeholder="16-DIGIT CARD NUMBER"
-                            className="w-full bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
-                            value={checkoutCardForm.number}
-                            onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, number: e.target.value })}
-                          />
-                          <div className="grid grid-cols-3 gap-2">
-                            <input
-                              type="text"
-                              placeholder="MM/YY"
-                              className="bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
-                              value={checkoutCardForm.expiry}
-                              onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, expiry: e.target.value })}
-                            />
-                            <input
-                              type="password"
-                              placeholder="CVV"
-                              maxLength={3}
-                              className="bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
-                              value={checkoutCardForm.cvv}
-                              onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, cvv: e.target.value })}
-                            />
-                            <input
-                              type="password"
-                              placeholder="PIN"
-                              maxLength={4}
-                              className="bg-slate-50 border border-zinc-855 p-2 rounded text-xs focus:outline-none"
-                              value={checkoutCardForm.pin}
-                              onChange={(e) => setCheckoutCardForm({ ...checkoutCardForm, pin: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Calculated Amount display */}
                   <div className="p-3 bg-slate-50 rounded border border-gray-200 flex items-center justify-between text-xs font-mono">
                     <span className="text-gray-400">Pay Amount:</span>
                     <span className="text-base font-extrabold text-gray-900">
@@ -4256,69 +4094,25 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       {checkoutOption === 'partial' && `₦${(checkoutTenancy.rentAmount * 0.75).toLocaleString()}`}
                       {checkoutOption === 'overpaid' && `₦${(checkoutTenancy.rentAmount * 1.25).toLocaleString()}`}
                       {checkoutOption === 'custom' && (
-                        <input
-                          type="number"
-                          placeholder="Amount in NGN"
+                        <input type="number" placeholder="Amount in NGN"
                           className="bg-transparent border-b border-gray-300 text-gray-900 font-extrabold focus:outline-none w-28 text-right pr-1"
-                          value={customPayAmount}
-                          onChange={(e) => setCustomPayAmount(e.target.value)}
-                        />
+                          value={customPayAmount} onChange={(e) => setCustomPayAmount(e.target.value)} />
                       )}
                     </span>
                   </div>
                 </div>
-              ) : paymentStatus === 'flash_details' && checkoutFlashAcct ? (
-                /* Flash Details view */
-                <div className="space-y-4 font-mono text-xs text-left">
-                  <div className="p-3 bg-slate-800/10 border border-slate-300 text-slate-700 rounded">
-                    Flash Bank Account Number Generated Successfully!
+              ) : paymentStatus === 'redirecting' ? (
+                <div className="py-8 flex flex-col items-center text-center space-y-4 font-mono">
+                  <div className="w-12 h-12 rounded-full bg-slate-800/10 text-slate-700 flex items-center justify-center border border-slate-300">
+                    <ExternalLink className="w-6 h-6" />
                   </div>
-                  <div className="space-y-2 bg-slate-50 p-4 border border-gray-200 rounded">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">BANK NAME:</span>
-                      <span className="text-gray-900 font-bold">{checkoutFlashAcct.bankName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">ACCOUNT NUMBER:</span>
-                      <span className="text-gray-900 font-mono font-bold text-sm tracking-wider select-all">{checkoutFlashAcct.flashAccountNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">BENEFICIARY:</span>
-                      <span className="text-gray-900 font-semibold">Nomba / AcreWise Escrow</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">TRANSFER AMOUNT:</span>
-                      <span className="text-slate-700 font-bold">₦{checkoutOption === 'exact' ? checkoutTenancy.rentAmount.toLocaleString() : (checkoutOption === 'partial' ? (checkoutTenancy.rentAmount * 0.75).toLocaleString() : (checkoutOption === 'overpaid' ? (checkoutTenancy.rentAmount * 1.25).toLocaleString() : parseFloat(customPayAmount).toLocaleString()))}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-[10px] text-gray-400 flex gap-2">
-                    <Info className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-                    <p>Copy the account details and perform a transfer. Once complete, click the confirm payment completion button below.</p>
-                  </div>
-                </div>
-              ) : paymentStatus === 'otp_prompt' ? (
-                /* Card OTP prompt */
-                <div className="space-y-4 font-mono text-xs text-left">
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    OTP Verification Code Required
-                  </div>
-                  <p className="text-gray-500 text-[11px]">Enter the 6-digit confirmation code sent to your phone number +234*****32 to authenticate card charge.</p>
                   <div className="space-y-1">
-                    <label className="text-[9px] text-gray-400">VERIFICATION OTP</label>
-                    <input
-                      type="password"
-                      placeholder="e.g. 123456"
-                      maxLength={6}
-                      className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs text-gray-900"
-                      value={checkoutOtp}
-                      onChange={(e) => setCheckoutOtp(e.target.value)}
-                    />
+                    <h4 className="font-bold text-gray-900 text-base">Redirecting to Nomba</h4>
+                    <p className="text-gray-400 text-xs">You are being securely redirected to Nomba's payment page.</p>
                   </div>
+                  <p className="text-[10px] text-gray-400">Order Ref: {checkoutOrderRef}</p>
                 </div>
               ) : paymentStatus === 'success' ? (
-                /* Success response */
                 <div className="py-8 flex flex-col items-center text-center space-y-4 font-mono">
                   <div className="w-12 h-12 rounded-full bg-slate-800/10 text-slate-700 flex items-center justify-center border border-slate-300">
                     <Check className="w-6 h-6" />
@@ -4329,99 +4123,47 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   </div>
                 </div>
               ) : (
-                /* Error response */
                 <div className="py-8 flex flex-col items-center text-center space-y-4">
                   <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
                     <ShieldAlert className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-bold text-gray-900 text-base">Transaction Failed</h4>
-                    <p className="text-gray-400 text-xs">Internal gateway processing error.</p>
+                    <p className="text-gray-400 text-xs">Could not create checkout order. Please try again.</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Footer Buttons */}
             <div className="p-6 border-t border-gray-200 bg-white shadow-sm border border-gray-200/10 flex gap-3">
               {paymentStatus === null ? (
                 <>
-                  <button
-                    disabled={isPaying}
-                    onClick={handleCheckoutPortalPay}
-                    className="flex-1 py-2 bg-slate-800 disabled:bg-zinc-700 disabled:text-gray-500 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center justify-center gap-1.5"
-                  >
-                    {isPaying ? 'Processing...' : 'Authorize Pay'}
+                  <button disabled={isPaying} onClick={handleCheckoutPortalPay}
+                    className="flex-1 py-2 bg-slate-800 disabled:bg-zinc-700 disabled:text-gray-500 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center justify-center gap-1.5">
+                    {isPaying ? 'Creating Order...' : 'Pay with Nomba'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCheckout(false)}
-                    className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
-                  >
-                    Cancel
-                  </button>
+                  <button type="button" onClick={() => setShowCheckout(false)}
+                    className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider">Cancel</button>
                 </>
-              ) : paymentStatus === 'flash_details' ? (
-                <>
-                  <button
-                    onClick={async () => {
-                      setIsPaying(true);
-                      let amt = checkoutTenancy.rentAmount;
-                      if (checkoutOption === 'partial') amt = checkoutTenancy.rentAmount * 0.75;
-                      if (checkoutOption === 'overpaid') amt = checkoutTenancy.rentAmount * 1.25;
-                      if (checkoutOption === 'custom') amt = parseFloat(customPayAmount) || 0;
-
-                      if (checkoutTenancy.isMarketplacePurchase) {
-                        await handleMarketplaceCheckout(checkoutTenancy.property);
-                      } else {
-                        await executePaymentSimulation(amt, checkoutTenancy.nombaVirtualAccountId);
-                      }
-
-                      setPaymentStatus('success');
-                      setIsPaying(false);
-                    }}
-                    className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
-                  >
-                    I have Transferred Dues
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentStatus(null)}
-                    className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
-                  >
-                    Back
-                  </button>
-                </>
-              ) : paymentStatus === 'otp_prompt' ? (
-                <>
-                  <button
-                    onClick={handleSubmitCardOtp}
-                    className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider"
-                  >
-                    Submit OTP Code
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentStatus(null)}
-                    className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
-                  >
-                    Back
-                  </button>
-                </>
+              ) : paymentStatus === 'success' ? (
+                <button onClick={() => setShowCheckout(false)}
+                  className="w-full py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider">Close Portal</button>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowCheckout(false)}
-                  className="w-full py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider"
-                >
-                  Close Portal
-                </button>
+                <>
+                  <button onClick={() => setPaymentStatus(null)}
+                    className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded transition uppercase tracking-wider">Back</button>
+                  {checkoutOrderRef && (
+                    <button disabled={isPaying} onClick={handleVerifyCheckoutOrder}
+                      className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs rounded transition uppercase tracking-wider">
+                      {isPaying ? 'Verifying...' : 'Verify Payment'}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       )}
-
       {/* MODAL: Create & List Property Form */}
       {showPropertyModal && (
         <div className="fixed inset-0 z-50 bg-white backdrop-blur flex items-start justify-center p-4 overflow-y-auto">
