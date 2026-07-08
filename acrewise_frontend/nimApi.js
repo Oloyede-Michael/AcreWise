@@ -12,14 +12,14 @@ export async function callNimApi({
   max_tokens = 4096,
   model = "nvidia/nemotron-3-ultra-550b-a55b"
 }) {
-  // Collect all available keys from the environment variables (Vite exposes VITE_ prefixed vars)
+  // Collect all available keys from the environment variables
   const keys = [
-    import.meta.env.VITE_NIM_API1,
-    import.meta.env.VITE_NIM1,
-    import.meta.env.VITE_NIM2,
-    import.meta.env.VITE_NIM3,
-    import.meta.env.VITE_NIM4,
-    import.meta.env.VITE_NIM5
+    process.env.NIM_API1,
+    process.env.NIM1,
+    process.env.NIM2,
+    process.env.NIM3,
+    process.env.NIM4,
+    process.env.NIM5
   ].filter(Boolean);
 
   if (keys.length === 0) {
