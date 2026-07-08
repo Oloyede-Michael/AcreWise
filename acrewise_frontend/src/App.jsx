@@ -83,6 +83,8 @@ export default function App() {
   const [properties, setProperties] = useState([]);
   const [tenancies, setTenancies] = useState([]);
   const [escrowTxns, setEscrowTxns] = useState([]);
+  const [escrowActionLoading, setEscrowActionLoading] = useState(null); // escrow id being actioned
+  const [escrowConfirm, setEscrowConfirm] = useState(null); // { txn, action: 'release' | 'reject' }
   const [unmatchedPayments, setUnmatchedPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -233,7 +235,17 @@ export default function App() {
   const [meterFormProvider, setMeterFormProvider] = useState('IKEDC');
 
   // Forms
-  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567', imageUrl: '', firstPaymentAmount: '', paymentFrequency: 'ANNUAL', annualProjections: ['','','','',''], ownershipDocumentUrl: '' });
+  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567', imageBase64: null, firstPaymentAmount: '', paymentFrequency: 'ANNUAL', annualProjections: ['','','','',''], ownershipDocumentUrl: '' });
+  const [propImagePreview, setPropImagePreview] = useState(null); // Object URL for local preview
+
+  function handlePropImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPropImagePreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onload = (ev) => setNewProp(prev => ({ ...prev, imageBase64: ev.target.result }));
+    reader.readAsDataURL(file);
+  }
   const [newTenancy, setNewTenancy] = useState({ propertyId: '', tenantId: '', rentAmount: '1200000', frequency: 'MONTHLY', nextDueDate: '2026-08-01', nombaVirtualAccountId: '' });
 
   // Marketplace FX Converter
@@ -871,28 +883,40 @@ export default function App() {
       const landlordId = landlordData.createLandlord.id;
       const projStr = JSON.stringify(newProp.annualProjections.map(v => parseFloat(v)||0));
       const hasOwnerDoc = newProp.ownershipDocumentUrl && newProp.ownershipDocumentUrl.trim();
+
+      // Send imageBase64 via variables to safely handle large payloads
       const propMutation = `
-        mutation {
+        mutation ListProperty(
+          $landlordId: ID!, $title: String!, $type: String!, $status: String!,
+          $area: String!, $buildingType: String!, $price: Float!, $totalUnits: Int,
+          $imageUrl: String, $firstPaymentAmount: Float, $paymentFrequency: String,
+          $annualProjections: String, $ownershipDocumentUrl: String
+        ) {
           listProperty(
-            landlordId: "${landlordId}",
-            title: "${newProp.title}",
-            type: "${newProp.type}",
-            status: "${newProp.status}",
-            area: "${newProp.area}",
-            buildingType: "${newProp.buildingType}",
-            price: ${parseFloat(newProp.price)},
-            totalUnits: ${parseInt(newProp.totalUnits) || 1}
-            ${newProp.imageUrl ? `, imageUrl: "${newProp.imageUrl}"` : ''}
-            ${newProp.firstPaymentAmount ? `, firstPaymentAmount: ${parseFloat(newProp.firstPaymentAmount)}` : ''}
-            , paymentFrequency: "${newProp.paymentFrequency}"
-            , annualProjections: "${projStr.replace(/"/g,'\\"')}"
-            ${hasOwnerDoc ? `, ownershipDocumentUrl: "${newProp.ownershipDocumentUrl}"` : ''}
-          ) {
-            id
-          }
+            landlordId: $landlordId, title: $title, type: $type, status: $status,
+            area: $area, buildingType: $buildingType, price: $price, totalUnits: $totalUnits,
+            imageUrl: $imageUrl, firstPaymentAmount: $firstPaymentAmount,
+            paymentFrequency: $paymentFrequency, annualProjections: $annualProjections,
+            ownershipDocumentUrl: $ownershipDocumentUrl
+          ) { id }
         }
       `;
-      const propData = await fetchGraphQL(propMutation);
+      const propVars = {
+        landlordId,
+        title: newProp.title,
+        type: newProp.type,
+        status: newProp.status,
+        area: newProp.area,
+        buildingType: newProp.buildingType,
+        price: parseFloat(newProp.price),
+        totalUnits: parseInt(newProp.totalUnits) || 1,
+        imageUrl: newProp.imageBase64 || null,
+        firstPaymentAmount: newProp.firstPaymentAmount ? parseFloat(newProp.firstPaymentAmount) : null,
+        paymentFrequency: newProp.paymentFrequency,
+        annualProjections: projStr,
+        ownershipDocumentUrl: hasOwnerDoc ? newProp.ownershipDocumentUrl : null,
+      };
+      const propData = await fetchGraphQL(propMutation, propVars);
       if (propData && propData.listProperty) {
         const propId = propData.listProperty.id;
         if (inviteTenantEmail) {
@@ -913,6 +937,8 @@ export default function App() {
           setInviteTenantEmail('');
         }
         setShowPropertyModal(false);
+        setPropImagePreview(null);
+        setNewProp(prev => ({ ...prev, imageBase64: null }));
         await loadData();
       }
     }
@@ -1618,26 +1644,29 @@ export default function App() {
             buyerId: "${userProfile.email}",
             amountHeld: ${rentAmount},
             nombaVirtualAccountId: "${tempVa}"
-          ) { id }
+          ) { id status }
         }
       `;
       await fetchGraphQL(eMutation);
-      await saveReceipt("House Purchase Escrow Deposit", "RENT", rentAmount, "ESC_" + Math.random().toString(36).substring(2, 10), `Escrow fund held secure for property: ${propObj.title}`);
+      // Mark property as UNDER_ESCROW so it's taken off the open marketplace
+      await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${propObj.id}", status: "UNDER_ESCROW") { id } }`);
+      await saveReceipt("House Purchase Escrow Deposit", "PURCHASE", rentAmount, "ESC_" + Math.random().toString(36).substring(2, 10), `Escrow deposit held securely for: ${propObj.title}. Funds will be released to landlord upon handover confirmation.`);
     } else {
+      const freq = propObj.paymentFrequency || 'MONTHLY';
       const tMutation = `
         mutation {
           createTenancy(
             propertyId: "${propObj.id}",
             tenantId: "${userProfile.email}",
             rentAmount: ${rentAmount},
-            frequency: "MONTHLY",
+            frequency: "${freq}",
             nextDueDate: "2026-08-01",
             nombaVirtualAccountId: "${tempVa}"
           ) { id }
         }
       `;
       await fetchGraphQL(tMutation);
-      await saveReceipt("Rent Purchase Payment", "RENT", rentAmount, "RNT_" + Math.random().toString(36).substring(2, 10), `Rent Checkout successful for property: ${propObj.title}`);
+      await saveReceipt("Rent First Payment", "RENT", rentAmount, "RNT_" + Math.random().toString(36).substring(2, 10), `First rent payment successful for: ${propObj.title}. Auto-subscription active — next payment due per ${freq.toLowerCase()} schedule.`);
     }
 
     // Decrement available units in PostgreSQL
@@ -1674,6 +1703,35 @@ export default function App() {
     await loadData();
     setLoading(false);
     alert(`Checkout Completed! House successfully secured.`);
+  }
+
+  // Landlord: Release or Reject an escrow transaction
+  async function handleEscrowAction(txn, action) {
+    setEscrowActionLoading(txn.id);
+    try {
+      if (action === 'release') {
+        // 1. Update property to SOLD
+        await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${txn.property.id}", status: "SOLD") { id } }`);
+        // 2. Save a release receipt for the landlord
+        await saveReceipt(
+          "Escrow Funds Released",
+          "PURCHASE",
+          txn.amountHeld,
+          "REL_" + Math.random().toString(36).substring(2, 10),
+          `Escrow released for: ${txn.property.title}. Buyer: ${txn.buyerId}. Funds disbursed to landlord account.`
+        );
+        alert(`✅ Escrow released! ₦${txn.amountHeld.toLocaleString()} disbursed. Property marked SOLD.`);
+      } else {
+        // Reject: put property back to LISTED
+        await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${txn.property.id}", status: "LISTED") { id } }`);
+        alert(`❌ Escrow rejected. Property relisted on marketplace.`);
+      }
+      await loadData();
+    } catch (err) {
+      console.error('Escrow action error:', err);
+    }
+    setEscrowActionLoading(null);
+    setEscrowConfirm(null);
   }
 
   // Filter properties
@@ -2372,32 +2430,146 @@ export default function App() {
               {/* Landlord Tab: Escrows */}
               {landlordTab === 'escrow' && (
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-bold">Purchase Escrows</h3>
-                    <p className="text-zinc-400 text-sm mt-1">Manage buyer secure deposits with escrow release triggers.</p>
+                  {/* Explanation banner */}
+                  <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl space-y-1">
+                    <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
+                      <Lock className="w-4 h-4" />
+                      What is a Purchase Escrow?
+                    </div>
+                    <p className="text-zinc-400 text-xs leading-relaxed">
+                      When a tenant buys a <strong className="text-white">SALE</strong> property via AcreWise, their payment is not sent directly to you. Instead it is held securely in a Nomba virtual account (escrow). The funds sit in <strong className="text-white">HELD</strong> state until you confirm the handover of keys / documents. You then click <strong className="text-emerald-400">Release Funds</strong> — money is disbursed to your account and the property is marked <strong className="text-white">SOLD</strong>. If there is a dispute, you can <strong className="text-red-400">Reject</strong> to cancel and relist the property.
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {escrowTxns.map((e) => (
-                      <div key={e.id} className="p-6 border border-zinc-900 bg-zinc-900/30 rounded-lg space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="px-2 py-0.5 rounded text-[9px] font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{e.status}</span>
-                          <span className="text-zinc-500 font-mono text-[10px]">ID: {e.id.substring(0, 8)}</span>
-                        </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold">Purchase Escrows</h3>
+                      <p className="text-zinc-400 text-sm mt-1">Buyer secure deposits pending your confirmation.</p>
+                    </div>
+                    <div className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg font-mono text-xs">
+                      <span className="text-zinc-500">Total Held: </span>
+                      <span className="text-white font-bold">₦{escrowTxns.filter(e => e.status === 'HELD').reduce((s, e) => s + e.amountHeld, 0).toLocaleString()}</span>
+                    </div>
+                  </div>
 
-                        <div>
-                          <h4 className="font-bold text-lg">{e.property.title}</h4>
-                          <p className="text-zinc-400 text-xs">Landlord: {e.property.landlord.name}</p>
-                          <p className="text-zinc-500 text-xs">Buyer ID: {e.buyerId}</p>
-                        </div>
+                  {escrowTxns.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-24 border border-dashed border-zinc-800 rounded-xl space-y-3 text-center">
+                      <Lock className="w-10 h-10 text-zinc-700" />
+                      <p className="text-zinc-500 text-sm">No escrow transactions yet.</p>
+                      <p className="text-zinc-600 text-xs max-w-xs">When a buyer pays for a SALE property on the marketplace, the escrow record will appear here for you to release or reject.</p>
+                    </div>
+                  )}
 
-                        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded font-mono text-sm flex items-center justify-between">
-                          <span className="text-zinc-500 text-xs">Escrow Amount Held:</span>
-                          <span className="font-bold text-white text-base">₦{e.amountHeld.toLocaleString()}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {escrowTxns.map((e) => {
+                      const isActioning = escrowActionLoading === e.id;
+                      const statusColors = {
+                        HELD: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                        RELEASED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                        REJECTED: 'bg-red-500/10 text-red-400 border-red-500/20',
+                      };
+                      return (
+                        <div key={e.id} className="border border-zinc-800 bg-zinc-900/20 rounded-xl overflow-hidden">
+                          {/* Property image if available */}
+                          {e.property?.imageUrl && (
+                            <img src={e.property.imageUrl} alt={e.property.title} className="w-full h-32 object-cover" />
+                          )}
+                          <div className="p-5 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${statusColors[e.status] || 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
+                                {e.status}
+                              </span>
+                              <span className="text-zinc-600 font-mono text-[10px]">#{e.id.substring(0, 8)}</span>
+                            </div>
+
+                            <div>
+                              <h4 className="font-bold text-base text-white">{e.property.title}</h4>
+                              <p className="text-zinc-500 text-xs mt-0.5">{e.property.area} · {e.property.buildingType}</p>
+                            </div>
+
+                            <div className="space-y-1.5 font-mono text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-zinc-500">Buyer</span>
+                                <span className="text-zinc-300">{e.buyerId}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-zinc-500">Virtual Account</span>
+                                <span className="text-zinc-400 truncate max-w-[140px]">{e.nombaVirtualAccountId}</span>
+                              </div>
+                              <div className="flex justify-between border-t border-zinc-800 pt-1.5 mt-1.5">
+                                <span className="text-zinc-500">Amount Held</span>
+                                <span className="font-bold text-white text-base">₦{e.amountHeld.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            {e.status === 'HELD' && (
+                              <div className="grid grid-cols-2 gap-2 pt-1">
+                                <button
+                                  disabled={isActioning}
+                                  onClick={() => setEscrowConfirm({ txn: e, action: 'release' })}
+                                  className="py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
+                                >
+                                  {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                  Release Funds
+                                </button>
+                                <button
+                                  disabled={isActioning}
+                                  onClick={() => setEscrowConfirm({ txn: e, action: 'reject' })}
+                                  className="py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 disabled:opacity-50 text-red-400 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
+                                >
+                                  <ShieldAlert className="w-3 h-3" />
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                            {e.status === 'RELEASED' && (
+                              <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Funds disbursed — property sold
+                              </div>
+                            )}
+                            {e.status === 'REJECTED' && (
+                              <div className="flex items-center gap-1.5 text-red-400 text-xs font-mono">
+                                <ShieldAlert className="w-3.5 h-3.5" /> Rejected — property relisted
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Escrow Confirm Modal */}
+                  {escrowConfirm && (
+                    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center p-4">
+                      <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 w-full max-w-sm space-y-4">
+                        <div className={`flex items-center gap-2 font-bold text-base ${escrowConfirm.action === 'release' ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {escrowConfirm.action === 'release' ? <CheckCircle2 className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
+                          {escrowConfirm.action === 'release' ? 'Release Escrow Funds' : 'Reject Escrow'}
+                        </div>
+                        <p className="text-zinc-400 text-sm">
+                          {escrowConfirm.action === 'release'
+                            ? `Release ₦${escrowConfirm.txn.amountHeld.toLocaleString()} to your account and mark "${escrowConfirm.txn.property.title}" as SOLD?`
+                            : `Cancel this escrow and relist "${escrowConfirm.txn.property.title}" on the marketplace?`
+                          }
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEscrowAction(escrowConfirm.txn, escrowConfirm.action)}
+                            disabled={escrowActionLoading !== null}
+                            className={`flex-1 py-2 font-bold text-xs rounded-lg transition ${escrowConfirm.action === 'release' ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-red-500 hover:bg-red-600 text-white'}`}
+                          >
+                            {escrowActionLoading ? 'Processing...' : 'Confirm'}
+                          </button>
+                          <button
+                            onClick={() => setEscrowConfirm(null)}
+                            className="flex-1 py-2 bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold text-xs rounded-lg transition hover:bg-zinc-800"
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -3950,14 +4122,37 @@ export default function App() {
                   value={newProp.title} onChange={(e) => setNewProp({ ...newProp, title: e.target.value })} required />
               </div>
 
-              {/* Image URL */}
+              {/* Photo Upload from device */}
               <div className="space-y-1">
-                <label className="text-[10px] text-zinc-500 block uppercase">Property Image URL <span className="text-zinc-600">(optional)</span></label>
-                <input type="url" placeholder="https://... link to photo of the property"
-                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500/50"
-                  value={newProp.imageUrl} onChange={(e) => setNewProp({ ...newProp, imageUrl: e.target.value })} />
-                {newProp.imageUrl && (
-                  <img src={newProp.imageUrl} alt="preview" className="mt-2 w-full h-32 object-cover rounded-lg border border-zinc-700" onError={(e) => e.target.style.display='none'} />
+                <label className="text-[10px] text-zinc-500 block uppercase">Property Photo <span className="text-zinc-600">(optional)</span></label>
+                <label
+                  htmlFor="prop-image-upload"
+                  className="flex flex-col items-center justify-center gap-2 w-full h-32 border-2 border-dashed border-zinc-700 hover:border-emerald-500/50 rounded-lg cursor-pointer bg-zinc-900/50 transition group"
+                >
+                  {propImagePreview ? (
+                    <img src={propImagePreview} alt="preview" className="w-full h-full object-cover rounded-lg" />
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-full bg-zinc-800 group-hover:bg-emerald-500/10 flex items-center justify-center transition">
+                        <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-emerald-400" />
+                      </div>
+                      <span className="text-[11px] text-zinc-500 group-hover:text-zinc-400 font-sans">Click to upload photo from device</span>
+                      <span className="text-[9px] text-zinc-600">JPG, PNG, WEBP — max 5MB</span>
+                    </>
+                  )}
+                </label>
+                <input
+                  id="prop-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePropImageSelect}
+                />
+                {propImagePreview && (
+                  <button type="button" onClick={() => { setPropImagePreview(null); setNewProp(p => ({ ...p, imageBase64: null })); }}
+                    className="text-[10px] text-red-400 hover:text-red-300 font-sans mt-0.5">
+                    Remove photo
+                  </button>
                 )}
               </div>
 

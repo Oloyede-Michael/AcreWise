@@ -68,8 +68,8 @@ public class Property {
 
     // ── New marketplace fields ──────────────────────────────────────────────
 
-    /** Optional URL of the property photo shown on marketplace cards */
-    @Column(name = "image_url", length = 1024)
+    /** Optional base64 data URL of the property photo shown on marketplace cards */
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
     /** First payment / booking amount the tenant must pay upfront */
