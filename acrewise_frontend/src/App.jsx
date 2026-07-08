@@ -1817,7 +1817,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             <a href="#why-acrewise" className=" transition">Why Acrewise</a>
             <a href="#faq" className=" transition">FAQ</a>
           </nav>
-          <button onClick={() => navigateTo('login', '/auth')} className="px-4 py-2 text-white font-semibold text-xs rounded tracking-wide transition ">
+          <button onClick={() => navigateTo('login', '/auth')} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded tracking-wide transition">
             GET STARTED
           </button>
         </header>
@@ -1841,7 +1841,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button onClick={() => navigateTo('login', '/auth')} className="px-8 py-4 text-white font-bold text-sm uppercase rounded-xl transition ">
+                  <button onClick={() => navigateTo('login', '/auth')} className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm uppercase rounded-xl transition">
                     Get Started
                   </button>
                   <a href="#how-it-works" className="inline-flex items-center justify-center px-8 py-4 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:border-slate-400 transition">
@@ -3652,7 +3652,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               setPaymentStatus(null);
                               setShowCheckout(true);
                             }}
-                            className="px-6 py-2.5 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
+                            className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
                           >
                             Pay Rent / Simulate Inflow
                           </button>
@@ -3818,7 +3818,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   setPaymentStatus(null);
                                   setShowCheckout(true);
                                 }}
-                                className="mt-auto w-full py-2.5 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
+                                className="mt-auto w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg font-sans transition uppercase tracking-wider text-center text-xs"
                               >
                                 {p.type === 'RENT' ? 'Rent via Nomba' : 'Buy via Nomba Escrow'}
                               </button>
