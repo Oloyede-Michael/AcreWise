@@ -32,7 +32,7 @@ public class NombaSandboxController {
 
         log.info("Sandbox Execution Request: {} ({} {})", name, method, url);
 
-        // Proxy ALL requests to the real Nomba API. On failure, fall back to the provided mock response.
+        // Proxy ALL requests to the real Nomba API. On failure, return an error response.
         return authService.getAccessToken()
             .flatMap(token -> {
                 if ("GET".equalsIgnoreCase(method)) {
@@ -72,8 +72,12 @@ public class NombaSandboxController {
                 }
             })
             .onErrorResume(err -> {
-                log.warn("Nomba API call failed for {}: {}. Falling back to mocked response.", url, err.getMessage());
-                return Mono.just(ResponseEntity.ok((Map) request.get("mockResponse")));
+                log.error("Nomba API call failed for {} ({} {}): {}", name, method, url, err.getMessage(), err);
+                return Mono.just(ResponseEntity.ok(Map.of(
+                    "code", "99",
+                    "description", "Payment gateway unavailable: " + err.getMessage(),
+                    "data", null
+                )));
             });
     }
 }

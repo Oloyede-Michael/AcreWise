@@ -49,7 +49,7 @@ public class NombaAuthService {
             .bodyValue(authBody)
             .retrieve()
             .bodyToMono(Map.class)
-            .timeout(java.time.Duration.ofSeconds(2))
+            .timeout(java.time.Duration.ofSeconds(10))
             .map(response -> {
                 Map<String, Object> data = (Map<String, Object>) response.get("data");
                 String token = (String) data.get("access_token");
