@@ -6,14 +6,8 @@
 // Keep track of the active key index in memory
 let currentKeyIndex = 0;
 
-export async function callNimApi({
-  messages,
-  temperature = 0.2,
-  max_tokens = 4096,
-  model = "nvidia/nemotron-3-ultra-550b-a55b"
-}) {
-  // Collect all available keys from the environment variables (Vite exposes VITE_ prefixed vars)
-  const keys = [
+function getConfiguredNimKeys() {
+  const importMetaKeys = [
     import.meta.env.VITE_NIM_API1,
     import.meta.env.VITE_NIM1,
     import.meta.env.VITE_NIM2,
@@ -21,6 +15,28 @@ export async function callNimApi({
     import.meta.env.VITE_NIM4,
     import.meta.env.VITE_NIM5
   ].filter(Boolean);
+
+  const injectedKeys = typeof __NIM_API_KEYS__ !== 'undefined'
+    ? [
+        __NIM_API_KEYS__.VITE_NIM_API1,
+        __NIM_API_KEYS__.VITE_NIM1,
+        __NIM_API_KEYS__.VITE_NIM2,
+        __NIM_API_KEYS__.VITE_NIM3,
+        __NIM_API_KEYS__.VITE_NIM4,
+        __NIM_API_KEYS__.VITE_NIM5
+      ].filter(Boolean)
+    : [];
+
+  return [...new Set([...importMetaKeys, ...injectedKeys])];
+}
+
+export async function callNimApi({
+  messages,
+  temperature = 0.2,
+  max_tokens = 4096,
+  model = "nvidia/nemotron-3-ultra-550b-a55b"
+}) {
+  const keys = getConfiguredNimKeys();
 
   if (keys.length === 0) {
     console.error("No NIM API Keys configured in environment variables.");
