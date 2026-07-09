@@ -65,6 +65,8 @@ const CONFIG = {
   secretKey: "8/doS7Q3w77EANpk3vpgSrc05hhOiRWp3eBs01sXyZ1AmovtZUXlmrxie+xnEF2tR4q79t0IFufMD1d4JrkT8g=="
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://acrewise-yfjv.onrender.com' : '');
+
 export default function App() {
   const [currentView, setCurrentView] = useState('landing'); // landing, login, dashboard
   const [userRole, setUserRole] = useState('tenant'); // landlord, tenant (restricted by userProfile.role)
@@ -392,7 +394,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const signature = await calculateSignature(hashString, CONFIG.secretKey);
 
     try {
-      const res = await fetch('/api/webhooks/nomba', {
+      const res = await fetch(API_BASE + '/api/webhooks/nomba', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -436,7 +438,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
 
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -499,7 +501,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   // GraphQL Helper
   async function fetchGraphQL(query, variables = {}) {
     try {
-      const res = await fetch('/graphql', {
+      const res = await fetch(API_BASE + '/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, variables })
@@ -1076,7 +1078,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     };
 
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1106,7 +1108,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setFetchingTerminals(true);
     const terminalsSpec = APIS_METADATA.find(a => a.name === "Fetch terminals assigned to a sub account");
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1146,7 +1148,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const lookupSpec = APIS_METADATA.find(a => a.name === "Perform bank account lookup");
 
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1183,7 +1185,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const transferSpec = APIS_METADATA.find(a => a.name === "Perform bank account transfer from the sub account");
 
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1223,7 +1225,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setLoading(true);
     const fxSpec = APIS_METADATA.find(a => a.name === "Convert money");
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1255,7 +1257,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setLoading(true);
     const authSpec = APIS_METADATA.find(a => a.name === "Authorize exchange");
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1367,7 +1369,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       return;
     }
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1415,7 +1417,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       return;
     }
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1463,7 +1465,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       return;
     }
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1511,7 +1513,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       return;
     }
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1547,7 +1549,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     if (confirm("Are you sure you want to revoke this saved card tokenized authorization?")) {
       const delCardSpec = APIS_METADATA.find(a => a.name === "Delete tokenized card data");
       try {
-        await fetch('/api/nomba-sandbox/execute', {
+        await fetch(API_BASE + '/api/nomba-sandbox/execute', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1582,7 +1584,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const checkoutOrderSpec = APIS_METADATA.find(a => a.name === "Create an online checkout order");
 
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1629,7 +1631,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const amt = checkoutTenancy.rentAmount;
     const orderSpec = APIS_METADATA.find(a => a.name && a.name.includes("Get Order details"));
     try {
-      const res = await fetch('/api/nomba-sandbox/execute', {
+      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
