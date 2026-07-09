@@ -7,8 +7,8 @@ export const APIS_METADATA = [
     description: "Issue an OAuth2 bearer access token using your client credentials.",
     requestBody: {
       grant_type: "client_credentials",
-      client_id: "e5e85b13-f560-4643-814e-c87435dbbc15",
-      client_secret: "8/doS7Q3w..."
+      client_id: "${NOMBA_CLIENT_KEY}",
+      client_secret: "${NOMBA_SECRET_KEY}"
     },
     responseBody: {
       code: "00",

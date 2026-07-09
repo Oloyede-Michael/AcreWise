@@ -72,10 +72,15 @@ public class NombaSandboxController {
                 }
             })
             .onErrorResume(err -> {
-                log.error("Nomba API call failed for {} ({} {}): {}", name, method, url, err.getMessage(), err);
+                String nombaResponse = err.getMessage();
+                if (err instanceof org.springframework.web.reactive.function.client.WebClientResponseException wcre) {
+                    nombaResponse = wcre.getResponseBodyAsString().block();
+                }
+                log.error("Nomba API call failed for {} ({} {}): {} | body: {}", name, method, url, err.getMessage(), nombaResponse);
                 return Mono.just(ResponseEntity.ok(Map.of(
                     "code", "99",
-                    "description", "Payment gateway unavailable: " + err.getMessage(),
+                    "description", "Payment gateway unavailable: " + nombaResponse,
+                    "rawError", nombaResponse,
                     "data", null
                 )));
             });
