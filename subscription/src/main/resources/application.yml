@@ -26,7 +26,7 @@ spring:
 # Nomba Sandbox Environment Configuration Blocks
 nomba:
   api:
-    base-url: https://sandbox.nomba.com
+    base-url: ${NOMBA_BASE_URL:https://sandbox.nomba.com}
     account-id: 
     client-key: 
     secret-key: # <-- Temporary change to match the test vector spec

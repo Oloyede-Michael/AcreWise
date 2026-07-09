@@ -37,7 +37,7 @@ spring:
 
 nomba:
   api:
-    base-url: https://sandbox.nomba.com
+    base-url: ${NOMBA_BASE_URL:https://sandbox.nomba.com}
     account-id: ${NOMBA_ACCOUNT_ID:f666ef9b-888e-4799-85ce-acb505b28023}
     client-key: ${NOMBA_CLIENT_KEY:e5e85b13-f560-4643-814e-c87435dbbc15}
     secret-key: ${NOMBA_SECRET_KEY:8/doS7Q3w77EANpk3vpgSrc05hhOiRWp3eBs01sXyZ1AmovtZUXlmrxie+xnEF2tR4q79t0IFufMD1d4JrkT8g==}
