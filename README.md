@@ -6,6 +6,17 @@ This system provides a full sandbox environment that mocks and simulates live ba
 
 ---
 
+## Test Login Credentials
+
+Use these pre-seeded accounts to log in immediately:
+
+| Role | Email |
+|---|---|
+| Landlord Dashboard | `land@gmail.com` |
+| Tenant Dashboard | `rent@gmail.com` |
+
+---
+
 ## Table of Contents
 1. [Core Features & Workspace Roles](#1-core-features--workspace-roles)
 2. [Fintech API Implementations (Nomba Suite)](#2-fintech-api-implementations-nomba-suite)

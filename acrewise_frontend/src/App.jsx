@@ -59,13 +59,13 @@ import { APIS_METADATA } from './apis_metadata';
 import { callNimApi } from '../nimApi.js';
 
 const CONFIG = {
-  parentAccountId: "f666ef9b-888e-4799-85ce-acb505b28023",
-  subAccountId: "5a6c217c-010f-4c90-9517-382c9ec46595",
-  clientKey: "e5e85b13-f560-4643-814e-c87435dbbc15",
-  secretKey: "8/doS7Q3w77EANpk3vpgSrc05hhOiRWp3eBs01sXyZ1AmovtZUXlmrxie+xnEF2tR4q79t0IFufMD1d4JrkT8g=="
+  parentAccountId: import.meta.env.VITE_NOMBA_PARENT_ACCOUNT_ID || '',
+  subAccountId: import.meta.env.VITE_NOMBA_SUB_ACCOUNT_ID || '',
+  clientKey: import.meta.env.VITE_NOMBA_CLIENT_KEY || '',
+  secretKey: import.meta.env.VITE_NOMBA_SECRET_KEY || ''
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://acrewise-yfjv.onrender.com' : '');
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing'); // landing, login, dashboard
