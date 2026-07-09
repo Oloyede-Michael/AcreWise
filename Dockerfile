@@ -15,6 +15,8 @@ RUN ./mvnw clean package -DskipTests -q
 # ─── Stage 2: Run ─────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine
 
+RUN apk add --no-cache curl
+
 WORKDIR /app
 
 # Set correct DB connection as container-level ENV (overrides anything baked into the JAR)
@@ -25,5 +27,9 @@ ENV JAVA_OPTS="-Djava.net.preferIPv4Stack=true"
 COPY --from=builder /app/target/land-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
+EXPOSE 9090
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

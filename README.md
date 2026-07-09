@@ -12,8 +12,8 @@ Use these pre-seeded accounts to log in immediately:
 
 | Role | Email |
 |---|---|
-| Landlord Dashboard | `land@gmail.com` |
-| Tenant Dashboard | `rent@gmail.com` |
+| Tenant Dashboard | `land@gmail.com` |
+| LandLord Dashboard | `rent@gmail.com` |
 
 ---
 
