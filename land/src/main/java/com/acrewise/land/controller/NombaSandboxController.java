@@ -74,7 +74,7 @@ public class NombaSandboxController {
             .onErrorResume(err -> {
                 String nombaResponse = err.getMessage();
                 if (err instanceof org.springframework.web.reactive.function.client.WebClientResponseException wcre) {
-                    nombaResponse = wcre.getResponseBodyAsString().block();
+                    nombaResponse = wcre.getResponseBodyAsString();
                 }
                 log.error("Nomba API call failed for {} ({} {}): {} | body: {}", name, method, url, err.getMessage(), nombaResponse);
                 return Mono.just(ResponseEntity.ok(Map.of(
