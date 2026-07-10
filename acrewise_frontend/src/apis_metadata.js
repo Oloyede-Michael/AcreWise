@@ -470,7 +470,7 @@ export const APIS_METADATA = [
   {
     name: "Fetch checkout Flash account number for transfer payment.",
     method: "GET",
-    url: "/v1/checkout/flash-account",
+    url: "/v1/checkout/get-checkout-kta/order_ref_102",
     tag: "Charge",
     description: "Generate a flash virtual account reference dynamically for checkout.",
     requestBody: {},
@@ -628,7 +628,7 @@ export const APIS_METADATA = [
   {
     name: "Perform bank account transfer from the sub account",
     method: "POST",
-    url: "/v1/transfers/bank/sub-account",
+    url: "/v2/transfers/bank/5a6c217c-010f-4c90-9517-382c9ec46595",
     tag: "Transfers",
     description: "Perform bank account transfer from the sub account wallet.",
     requestBody: {
@@ -738,7 +738,7 @@ export const APIS_METADATA = [
   {
     name: "Fetch a single transaction on a sub account",
     method: "GET",
-    url: "/v1/transactions/sub-account/tx_nomba_rec_8819",
+    url: "/v1/transactions/accounts/5a6c217c-010f-4c90-9517-382c9ec46595",
     tag: "Transactions",
     description: "Inspect sub-account transaction logs by ID.",
     requestBody: {},
@@ -756,7 +756,7 @@ export const APIS_METADATA = [
   {
     name: "Fetch credit debit transactions on the parent account",
     method: "GET",
-    url: "/v1/transactions/ledger",
+    url: "/v1/transactions/bank",
     tag: "Transactions",
     description: "Retrieve double-entry ledger summaries on parent account.",
     requestBody: {},
@@ -773,7 +773,7 @@ export const APIS_METADATA = [
   {
     name: "Convert money",
     method: "POST",
-    url: "/v1/fx/convert",
+    url: "/v1/global-payout/money/convert",
     tag: "Global Payout",
     description: "Perform foreign exchange conversions dynamically.",
     requestBody: {
@@ -793,7 +793,7 @@ export const APIS_METADATA = [
   {
     name: "Fetch exchange rates",
     method: "GET",
-    url: "/v1/fx/rates",
+    url: "/v1/global-payout/exchange-rates?from=NGN&to=USD",
     tag: "Global Payout",
     description: "Fetch live exchange rates for payout currencies.",
     requestBody: {},
@@ -811,7 +811,7 @@ export const APIS_METADATA = [
   {
     name: "Fetch transaction",
     method: "GET",
-    url: "/v1/fx/transaction/fx_conv_9921",
+    url: "/v1/global-payout/transactions/fx_conv_9921",
     tag: "Global Payout",
     description: "Query foreign exchange transaction status.",
     requestBody: {},
@@ -827,7 +827,7 @@ export const APIS_METADATA = [
   {
     name: "Authorize exchange",
     method: "POST",
-    url: "/v1/fx/authorize",
+    url: "/v1/global-payout/exchange/authorize",
     tag: "Global Payout",
     description: "Submit authorization OTP for exchange execution.",
     requestBody: {
@@ -857,7 +857,7 @@ export const APIS_METADATA = [
   {
     name: "Payment methods",
     method: "GET",
-    url: "/v1/fx/methods",
+    url: "/v1/global-payout/payment-methods",
     tag: "Global Payout",
     description: "Retrieve supported payout channels.",
     requestBody: {},

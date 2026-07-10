@@ -59,10 +59,7 @@ import { APIS_METADATA } from './apis_metadata';
 import { callNimApi } from '../nimApi.js';
 
 const CONFIG = {
-  parentAccountId: import.meta.env.VITE_NOMBA_PARENT_ACCOUNT_ID || '',
-  subAccountId: import.meta.env.VITE_NOMBA_SUB_ACCOUNT_ID || '',
-  clientKey: import.meta.env.VITE_NOMBA_CLIENT_KEY || '',
-  secretKey: import.meta.env.VITE_NOMBA_SECRET_KEY || ''
+  subAccountId: import.meta.env.VITE_NOMBA_SUB_ACCOUNT_ID || ''
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -151,17 +148,11 @@ export default function App() {
   const [checkoutOrderRef, setCheckoutOrderRef] = useState('');
 
   // Tokenized Saved Cards
-  const [tokenizedCards, setTokenizedCards] = useState([
-    { id: "card_tok_1", cardToken: "tok_visa_4242", last4: "4242", brand: "Visa", expiry: "12/28" },
-    { id: "card_tok_2", cardToken: "tok_mc_9981", last4: "9981", brand: "Mastercard", expiry: "09/27" }
-  ]);
+  const [tokenizedCards, setTokenizedCards] = useState([]);
   const [selectedSavedCard, setSelectedSavedCard] = useState('');
 
   // POS Terminals State
-  const [posTerminals, setPosTerminals] = useState([
-    { id: "term_9921a", terminalId: "2NMB0987", serialNumber: "SN-9988210", status: "ACTIVE", dateAssigned: "2026-06-15T10:00:00.000Z" },
-    { id: "term_8812c", terminalId: "2NMB1124", serialNumber: "SN-9988215", status: "ACTIVE", dateAssigned: "2026-06-20T14:30:00.000Z" }
-  ]);
+  const [posTerminals, setPosTerminals] = useState([]);
   const [fetchingTerminals, setFetchingTerminals] = useState(false);
 
   // Payouts & Utilities Tab States
@@ -212,33 +203,10 @@ export default function App() {
   const [betAmount, setBetAmount] = useState('2000');
   const [betResult, setBetResult] = useState('');
 
-  // Webhook Logs Console Tab and Items
+  // Nomba API console tabs
   const [simulatorSubTab, setSimulatorSubTab] = useState('playground');
   const [selectedLogId, setSelectedLogId] = useState(null);
-  const [webhookLogs, setWebhookLogs] = useState([
-    {
-      id: "log_init_1",
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      eventType: "payment_success",
-      reference: "tx_nomba_rec_4021",
-      amount: 1200000,
-      status: 200,
-      reconciliation: "MATCHED",
-      target: "va_eko_atlantic_rent",
-      details: "Exact amount matched tenancy. Next due date advanced by 1 month."
-    },
-    {
-      id: "log_init_2",
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      eventType: "payment_success",
-      reference: "tx_nomba_rec_8819",
-      amount: 1000000,
-      status: 200,
-      reconciliation: "UNDERPAID",
-      target: "va_lekki_villa_rent",
-      details: "Shortfall of ₦2,500,000 recorded in arrears balance ledger."
-    }
-  ]);
+  const [webhookLogs] = useState([]);
 
   // API Playground States
   const [selectedApiIndex, setSelectedApiIndex] = useState(0);
@@ -276,15 +244,21 @@ export default function App() {
   const [mktFxCurrency, setMktFxCurrency] = useState('USD');
   const [mktFxLoading, setMktFxLoading] = useState(false);
 
-  const FX_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY', 'INR', 'ZAR', 'GHS'];
+  const FX_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD'];
 
   async function fetchMarketplaceRate(currency) {
     setMktFxLoading(true);
     try {
-      const res = await fetch(`https://api.frankfurter.app/latest?from=NGN&to=${currency}`);
-      const data = await res.json();
-      setMktFxRate(data.rates[currency] || null);
-    } catch { setMktFxRate(null); }
+      const data = await executeNombaApi({
+        name: 'Fetch Nomba exchange rates',
+        method: 'GET',
+        url: `/v1/global-payout/exchange-rates?from=NGN&to=${encodeURIComponent(currency)}`
+      });
+      const rate = data.data?.rates?.[0];
+      setMktFxRate(rate ? parseFloat(String(rate.midRate || rate.askRate || '').replace(/[^0-9.]/g, '')) : null);
+    } catch {
+      setMktFxRate(null);
+    }
     setMktFxLoading(false);
   }
 
@@ -335,35 +309,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
   }
 
-  // Web Crypto HMAC-SHA256 signing utility
-  async function calculateSignature(hashingPayload, secretKey) {
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secretKey);
-    const messageData = encoder.encode(hashingPayload);
-
-    const cryptoKey = await window.crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: { name: "SHA-256" } },
-      false,
-      ["sign"]
-    );
-
-    const signatureBuffer = await window.crypto.subtle.sign(
-      "HMAC",
-      cryptoKey,
-      messageData
-    );
-
-    const hashArray = new Uint8Array(signatureBuffer);
-    let binaryString = "";
-    for (let i = 0; i < hashArray.length; i++) {
-      binaryString += String.fromCharCode(hashArray[i]);
-    }
-    return window.btoa(binaryString);
-  }
-
-  // --- REST / Webhook Simulator & Sandbox Helpers ---
+  // --- REST / Nomba production API helpers ---
 
   useEffect(() => {
     if (APIS_METADATA[selectedApiIndex]) {
@@ -371,56 +317,30 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
   }, [selectedApiIndex]);
 
-  async function executePaymentSimulation(amount, virtualAccountId) {
-    const transactionId = "tx_" + Math.random().toString(36).substring(2, 12);
-    const requestId = "req_" + Math.random().toString(36).substring(2, 12);
-    const timestamp = new Date().toISOString();
-
-    const payload = {
-      eventType: "payment_success",
-      requestId: requestId,
-      userId: "user_hackathon_2026",
-      walletId: "wallet_reflow_live",
-      transactionId: transactionId,
-      type: "payout",
-      time: timestamp,
-      responseCode: "00",
-      timestamp: timestamp,
-      amount: amount,
-      virtualAccountId: virtualAccountId
-    };
-
-    const hashString = `payment_success:${requestId}:user_hackathon_2026:wallet_reflow_live:${transactionId}:payout:${timestamp}:00:${timestamp}`;
-    const signature = await calculateSignature(hashString, CONFIG.secretKey);
-
-    try {
-      const res = await fetch(API_BASE + '/api/webhooks/nomba', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Nomba-Signature': signature
-        },
-        body: JSON.stringify(payload)
-      });
-
-      await loadData();
-
-      const newLog = {
-        id: "log_" + Math.random().toString(36).substring(2, 12),
-        timestamp: new Date().toISOString(),
-        eventType: "payment_success",
-        reference: transactionId,
-        amount: amount,
-        status: res.status,
-        reconciliation: amount >= 1200000 ? "MATCHED" : "UNDERPAID",
-        target: virtualAccountId,
-        details: `Simulated inbound payment to VA ${virtualAccountId} of ₦${amount.toLocaleString()}. Status: ${res.status}`,
-        payload: JSON.stringify(payload, null, 2)
-      };
-      setWebhookLogs(prev => [newLog, ...prev]);
-    } catch (err) {
-      console.error("Simulation trigger failed:", err);
+  async function executeNombaApi({ name, method, url, body = {} }) {
+    const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, method, url, body })
+    });
+    const data = await res.json();
+    if (!res.ok || data?.code !== '00') {
+      throw new Error(data?.description || `Nomba request failed (${res.status})`);
     }
+    return data;
+  }
+
+  async function provisionNombaVirtualAccount(accountName, accountRef) {
+    const data = await executeNombaApi({
+      name: 'Create production virtual account',
+      method: 'POST',
+      url: CONFIG.subAccountId ? `/v1/accounts/virtual/${CONFIG.subAccountId}` : '/v1/accounts/virtual',
+      body: {
+        accountRef,
+        accountName
+      }
+    });
+    return data.data;
   }
 
   async function handleExecutePlaygroundApi() {
@@ -446,13 +366,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           method: api.method,
           url: api.url,
           body: bodyObj,
-          mockResponse: api.responseBody
         })
       });
       const data = await res.json();
       setApiResponseOutput(data);
     } catch (err) {
-      setApiResponseOutput({ error: "Failed to connect to Sandbox execution server." });
+      setApiResponseOutput({ error: "Failed to connect to Nomba production API." });
     }
     setApiLoading(false);
   }
@@ -1065,40 +984,18 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
   }
 
-  // Provision Virtual Account directly using Sandbox Executor
+  // Provision a real Nomba virtual account for a tenancy.
   async function handleProvisionVirtualAccount() {
     setIsProvisioningVa(true);
-    const mockVirtualAcctSpec = APIS_METADATA.find(a => a.name === "Create virtual account for a sub account");
-    const accountRef = "ref_" + Math.random().toString(36).substring(2, 12);
-
-    const requestBody = {
-      accountRef: accountRef,
-      accountName: "AcreWise Tenant VA",
-      bvn: "12345678"
-    };
-
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: mockVirtualAcctSpec.name,
-          method: mockVirtualAcctSpec.method,
-          url: `/v1/accounts/virtual/${CONFIG.subAccountId}`,
-          body: requestBody,
-          mockResponse: mockVirtualAcctSpec.responseBody
-        })
-      });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        const generatedVa = data.data.bankAccountNumber;
-        setNewTenancy({ ...newTenancy, nombaVirtualAccountId: generatedVa });
-        alert(`Successfully provisioned virtual account! \nAccount Number: ${generatedVa}\nBank Name: ${data.data.bankName}`);
-      } else {
-        alert("Nomba Virtual Account service returned an error status.");
-      }
+      const data = await provisionNombaVirtualAccount(
+        `AcreWise ${userProfile?.email || 'Tenant'}`,
+        `acrewise_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+      );
+      setNewTenancy({ ...newTenancy, nombaVirtualAccountId: data.bankAccountNumber });
+      alert(`Successfully provisioned virtual account! \nAccount Number: ${data.bankAccountNumber}\nBank Name: ${data.bankName}`);
     } catch (err) {
-      alert("Failed to connect to Nomba Virtual Account service.");
+      alert(`Virtual account provisioning failed: ${err.message}`);
     }
     setIsProvisioningVa(false);
   }
@@ -1114,22 +1011,22 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         body: JSON.stringify({
           name: terminalsSpec.name,
           method: terminalsSpec.method,
-          url: `/v1/terminals/sub-account/${CONFIG.subAccountId}`,
+          url: CONFIG.subAccountId ? `/v1/terminals/sub-account/${CONFIG.subAccountId}` : '/v1/terminals',
           body: {},
-          mockResponse: terminalsSpec.responseBody
         })
       });
       const data = await res.json();
       if (data && data.code === "00") {
-        const mapped = data.data.map((term, i) => ({
-          id: "term_sandbox_" + i,
-          terminalId: term.terminalId || `2NMB${1000 + i}`,
-          serialNumber: term.serialNumber || `SN-${9988000 + i}`,
-          status: term.status || "ACTIVE",
-          dateAssigned: new Date().toISOString()
+        const terminals = Array.isArray(data.data) ? data.data : data.data?.results || [];
+        const mapped = terminals.map((term) => ({
+          id: term.id || term.terminalId,
+          terminalId: term.terminalId,
+          serialNumber: term.serialNumber,
+          status: term.status,
+          dateAssigned: term.dateAssigned || term.createdAt
         }));
         setPosTerminals(mapped);
-        alert("Successfully synced POS Terminal rosters from Nomba Sandbox!");
+        alert("Successfully synced POS Terminal rosters from Nomba.");
       }
     } catch (err) {
       alert("Could not load sub-account terminals.");
@@ -1159,7 +1056,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             accountNumber: payoutAcctNumber,
             bankCode: payoutBankCode
           },
-          mockResponse: lookupSpec.responseBody
         })
       });
       const data = await res.json();
@@ -1191,17 +1087,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         body: JSON.stringify({
           name: transferSpec.name,
           method: transferSpec.method,
-          url: transferSpec.url,
+          url: CONFIG.subAccountId ? `/v2/transfers/bank/${CONFIG.subAccountId}` : '/v2/transfers/bank',
           body: {
-            subAccountId: CONFIG.subAccountId,
             amount: parseFloat(payoutAmount),
             accountNumber: payoutAcctNumber,
             accountName: payoutVerifiedName,
             bankCode: payoutBankCode,
             merchantTxRef: "UNQ_" + Math.random().toString(36).substring(2, 10),
+            senderName: userProfile?.name || userProfile?.email || "AcreWise",
             narration: "AcreWise Rent Payout"
           },
-          mockResponse: transferSpec.responseBody
         })
       });
       const data = await res.json();
@@ -1223,31 +1118,24 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   // FX Convert rates lookup
   async function handleFxConvert() {
     setLoading(true);
-    const fxSpec = APIS_METADATA.find(a => a.name === "Convert money");
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      const data = await executeNombaApi({
+        name: 'Convert money with Nomba',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: fxSpec.name,
-          method: fxSpec.method,
-          url: fxSpec.url,
-          body: {
-            fromCurrency: "NGN",
-            toCurrency: fxTargetCurrency,
-            amount: parseFloat(fxAmount)
-          },
-          mockResponse: fxSpec.responseBody
-        })
+        url: '/v1/global-payout/money/convert',
+        body: {
+          amount: parseFloat(fxAmount),
+          currency: 'NGN',
+          destinationCurrency: fxTargetCurrency,
+          transactionType: 'EXCHANGE',
+          sourceCountryIsoCode: 'NG'
+        }
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setFxExchangeId(data.data.exchangeId);
-        setFxRate(data.data.rate);
-        setFxStep(2); // Prompt OTP
-      }
+      setFxExchangeId(data.data?.exchangeRateId);
+      setFxRate(data.data?.toAmount ? data.data.toAmount / parseFloat(fxAmount) : null);
+      setFxStep(2);
     } catch (err) {
-      alert("FX Rate fetch failed.");
+      alert(`FX conversion quote failed: ${err.message}`);
     }
     setLoading(false);
   }
@@ -1255,34 +1143,36 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   // Confirm FX conversion
   async function handleConfirmFx() {
     setLoading(true);
-    const authSpec = APIS_METADATA.find(a => a.name === "Authorize exchange");
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      const data = await executeNombaApi({
+        name: 'Authorize Nomba exchange',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: authSpec.name,
-          method: authSpec.method,
-          url: authSpec.url,
-          body: {
-            exchangeId: fxExchangeId,
-            otp: fxOtp
-          },
-          mockResponse: authSpec.responseBody
-        })
+        url: '/v1/global-payout/exchange/authorize',
+        body: {
+          amount: parseFloat(fxAmount),
+          sourceCurrency: 'NGN',
+          destinationCurrency: fxTargetCurrency,
+          senderName: userProfile?.name || userProfile?.email || 'AcreWise Customer',
+          receiverName: userProfile?.name || userProfile?.email || 'AcreWise Customer',
+          sourceCountryIsoCode: 'NG',
+          destinationCountryIsoCode: 'NG',
+          authCode: fxOtp,
+          narration: 'AcreWise currency conversion',
+          lockedExchangeRateId: fxExchangeId
+        }
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setFxResult(`Exchange Authorized! Converted ₦${fxAmount} at rate ${fxRate}. Target Balance Credited.`);
+      if (data?.code === '00') {
+        const reference = data.data?.wtTransactionId || fxExchangeId;
+        setFxResult(`Exchange submitted. Reference: ${reference}. Status: ${data.data?.status || 'PROCESSING'}.`);
 
         // Save Receipt
-        await saveReceipt("Currency Conversion", "RENT", parseFloat(fxAmount), fxExchangeId, `Converted NGN to ${fxTargetCurrency} at rate ${fxRate}`);
+        await saveReceipt("Currency Conversion", "RENT", parseFloat(fxAmount), reference, `Converted NGN to ${fxTargetCurrency} at rate ${fxRate}`);
 
         setFxStep(1);
         setFxOtp('');
       }
     } catch (err) {
-      alert("Verification failed.");
+      alert(`FX authorization failed: ${err.message}`);
     }
     setLoading(false);
   }
@@ -1294,9 +1184,17 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       return;
     }
     setMeterOwner("Loading...");
-    setTimeout(() => {
-      setMeterOwner("Verified Renter - Meter ID: " + meterNumber);
-    }, 1000);
+    try {
+      const data = await executeNombaApi({
+        name: 'Fetch electricity customer information',
+        method: 'GET',
+        url: `/v1/bill/electricity/lookup?customerId=${encodeURIComponent(meterNumber)}&disco=${encodeURIComponent(discoCode)}`
+      });
+      setMeterOwner(typeof data.data === 'string' ? data.data : `Verified meter ${meterNumber}`);
+    } catch (err) {
+      setMeterOwner('');
+      alert(`Meter verification failed: ${err.message}`);
+    }
   }
 
   // Save receipt to locker
@@ -1324,32 +1222,59 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function handleVendElectricity(e) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(async () => {
-      const tokens = Array.from({ length: 5 }, () => Math.floor(1000 + Math.random() * 9000)).join('-');
-      setUtilityToken(tokens);
-      setLoading(false);
-
-      // Save Receipt
-      await saveReceipt("Electricity Token Purchase", "UTILITY", parseFloat(utilityAmount), "MTR_" + Math.random().toString(36).substring(2, 10), `Electricity disco: ${discoCode}. Meter: ${meterNumber}. Token: ${tokens}`);
-
-      alert("Electricity Token generated successfully!");
-    }, 1500);
+    try {
+      const data = await executeNombaApi({
+        name: 'Vend electricity via Nomba',
+        method: 'POST',
+        url: '/v1/bill/electricity',
+        body: {
+          disco: discoCode.toLowerCase(),
+          merchantTxRef: `acrewise_${Date.now()}`,
+          payerName: userProfile?.name || userProfile?.email || 'AcreWise Customer',
+          amount: parseInt(utilityAmount, 10),
+          customerId: meterNumber,
+          meterType: 'PREPAID'
+        }
+      });
+      const result = data.data || {};
+      const token = result.meta?.phcnVendToken || 'Pending delivery';
+      const reference = result.meta?.merchantTxRef || result.id;
+      setUtilityToken(token);
+      await saveReceipt('Electricity Token Purchase', 'UTILITY', parseFloat(utilityAmount), reference, `Electricity disco: ${discoCode}. Meter: ${meterNumber}. Token: ${token}`);
+      alert(`Electricity request completed. Token: ${token}`);
+    } catch (err) {
+      alert(`Electricity vending failed: ${err.message}`);
+    }
+    setLoading(false);
   }
 
   // Buy Airtime/Data
   async function handleVendAirtime(e) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(async () => {
-      setLoading(false);
-      const reference = "AIR_" + Math.random().toString(36).substring(2, 10);
-
-      // Save Receipt
-      await saveReceipt("Mobile Airtime / Data", "UTILITY", 3000, reference, `Vended to ${airtimePhone} under plan: ${airtimePlan}`);
-
-      alert(`Successfully vended ${airtimePlan === 'airtime' ? 'Airtime' : 'Data bundle'} to ${airtimePhone}!`);
+    try {
+      const amount = airtimePlan === 'airtime' ? 3000 : airtimePlan === 'data_large' ? 6000 : 3000;
+      const data = await executeNombaApi({
+        name: airtimePlan === 'airtime' ? 'Vend airtime via Nomba' : 'Vend data via Nomba',
+        method: 'POST',
+        url: airtimePlan === 'airtime' ? '/v1/bill/topup' : '/v1/bill/data',
+        body: {
+          amount,
+          phoneNumber: airtimePhone,
+          network: airtimeCarrier,
+          merchantTxRef: `acrewise_${Date.now()}`,
+          senderName: userProfile?.name || userProfile?.email || 'AcreWise Customer'
+        }
+      });
+      const result = data.data || {};
+      const reference = result.meta?.merchantTxRef || result.id;
+      await saveReceipt('Mobile Airtime / Data', 'UTILITY', amount, reference, `Vended to ${airtimePhone} under plan: ${airtimePlan}`);
+      alert(`${airtimePlan === 'airtime' ? 'Airtime' : 'Data'} request completed. Status: ${result.status || data.description}`);
       setAirtimePhone('');
-    }, 1200);
+    } catch (err) {
+      alert(`Airtime/data vending failed: ${err.message}`);
+    }
+    setLoading(false);
   }
 
   // Verify Cable TV Smartcard
@@ -1361,34 +1286,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setTvVerifying(true);
     setTvVerifiedName('');
     const tvSpec = APIS_METADATA.find(a => a.name === "Verify customer TV service details");
-    if (!tvSpec) {
-      setTimeout(() => {
-        setTvVerifiedName("Animashaun Chinedu (DSTV Compact Premium)");
-        setTvVerifying(false);
-      }, 800);
-      return;
-    }
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: tvSpec.name,
-          method: tvSpec.method,
-          url: tvSpec.url,
-          body: {
-            cardNumber: tvSmartcard,
-            service: tvProvider
-          },
-          mockResponse: tvSpec.responseBody
-        })
+      const data = await executeNombaApi({
+        name: tvSpec?.name || 'Fetch cable TV customer information',
+        method: 'GET',
+        url: `/v1/bill/cabletv/lookup?customerId=${encodeURIComponent(tvSmartcard)}&cableTvType=${encodeURIComponent(tvProvider.toLowerCase())}`
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setTvVerifiedName(data.data.name);
-      }
+      setTvVerifiedName(typeof data.data === 'string' ? data.data : data.data?.name || 'Verified customer');
     } catch (err) {
-      alert("Verification failed.");
+      alert(`Cable TV verification failed: ${err.message}`);
     }
     setTvVerifying(false);
   }
@@ -1402,48 +1308,27 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
     setLoading(true);
     const tvVendSpec = APIS_METADATA.find(a => a.name === "Vend TV service subscription");
-    if (!tvVendSpec) {
-      setTimeout(async () => {
-        const reference = "TV_ORD_" + Math.floor(100000 + Math.random() * 900000);
-        setTvResult(`Cable TV subscription active! Receipt: ${reference}`);
-
-        // Save Receipt
-        await saveReceipt("Cable TV Subscription", "CABLE", 5100, reference, `Vended to Smartcard: ${tvSmartcard} (${tvProvider}) Package: ${tvPackageCode}`);
-
-        setTvSmartcard('');
-        setTvVerifiedName('');
-        setLoading(false);
-      }, 1000);
-      return;
-    }
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      const amount = tvPackageCode === 'dstv_compact' ? 15700 : tvPackageCode === 'gotv_max' ? 7200 : 5100;
+      const data = await executeNombaApi({
+        name: tvVendSpec?.name || 'Vend cable TV subscription',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: tvVendSpec.name,
-          method: tvVendSpec.method,
-          url: tvVendSpec.url,
-          body: {
-            cardNumber: tvSmartcard,
-            amount: 5100,
-            packageCode: tvPackageCode
-          },
-          mockResponse: tvVendSpec.responseBody
-        })
+        url: '/v1/bill/cabletv',
+        body: {
+          cableTvType: tvProvider.toLowerCase(),
+          merchantTxRef: `acrewise_${Date.now()}`,
+          payerName: userProfile?.name || userProfile?.email || 'AcreWise Customer',
+          amount,
+          customerId: tvSmartcard
+        }
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setTvResult(`Cable TV subscription active! Receipt: ${data.data.orderId}`);
-
-        // Save Receipt
-        await saveReceipt("Cable TV Subscription", "CABLE", 5100, data.data.orderId, `Vended to Smartcard: ${tvSmartcard} (${tvProvider})`);
-
-        setTvSmartcard('');
-        setTvVerifiedName('');
-      }
+      const reference = data.data?.meta?.merchantTxRef || data.data?.id;
+      setTvResult(`Cable TV request completed. Reference: ${reference}`);
+      await saveReceipt('Cable TV Subscription', 'CABLE', amount, reference, `Vended to Smartcard: ${tvSmartcard} (${tvProvider})`);
+      setTvSmartcard('');
+      setTvVerifiedName('');
     } catch (err) {
-      alert("Vending failed.");
+      alert(`Cable TV vending failed: ${err.message}`);
     }
     setLoading(false);
   }
@@ -1457,34 +1342,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setBetVerifying(true);
     setBetVerifiedName('');
     const betVerifySpec = APIS_METADATA.find(a => a.name === "Verify betting customer details");
-    if (!betVerifySpec) {
-      setTimeout(() => {
-        setBetVerifiedName("Okafor Daniel (SportyBet Player Account)");
-        setBetVerifying(false);
-      }, 800);
-      return;
-    }
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: betVerifySpec.name,
-          method: betVerifySpec.method,
-          url: betVerifySpec.url,
-          body: {
-            customerId: betCustomerId,
-            provider: betProvider
-          },
-          mockResponse: betVerifySpec.responseBody
-        })
+      const data = await executeNombaApi({
+        name: betVerifySpec?.name || 'Fetch betting customer information',
+        method: 'GET',
+        url: `/v1/bill/betting/lookup?providerId=${encodeURIComponent(betProvider.toLowerCase())}&customerId=${encodeURIComponent(betCustomerId)}`
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setBetVerifiedName(data.data.customerName);
-      }
+      setBetVerifiedName(typeof data.data === 'string' ? data.data : data.data?.customerName || 'Verified customer');
     } catch (err) {
-      alert("Customer check failed.");
+      alert(`Betting customer verification failed: ${err.message}`);
     }
     setBetVerifying(false);
   }
@@ -1498,48 +1364,27 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
     setLoading(true);
     const betVendSpec = APIS_METADATA.find(a => a.name === "Vend betting wallet top up");
-    if (!betVendSpec) {
-      setTimeout(async () => {
-        const reference = "BET_TXN_" + Math.floor(100000 + Math.random() * 900000);
-        setBetResult(`Betting Wallet Topup Successful! Ref: ${reference}`);
-
-        // Save Receipt
-        await saveReceipt("Betting Wallet Credit", "BETTING", parseFloat(betAmount), reference, `Credited betting account: ${betCustomerId} (${betProvider})`);
-
-        setBetCustomerId('');
-        setBetVerifiedName('');
-        setLoading(false);
-      }, 1000);
-      return;
-    }
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      const data = await executeNombaApi({
+        name: betVendSpec?.name || 'Vend betting wallet top up',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: betVendSpec.name,
-          method: betVendSpec.method,
-          url: betVendSpec.url,
-          body: {
-            customerId: betCustomerId,
-            amount: parseFloat(betAmount),
-            provider: betProvider
-          },
-          mockResponse: betVendSpec.responseBody
-        })
+        url: '/v1/bill/betting',
+        body: {
+          bettingProvider: betProvider.toLowerCase(),
+          merchantTxRef: `acrewise_${Date.now()}`,
+          phoneNumber: userProfile?.phone || '',
+          payerName: userProfile?.name || userProfile?.email || 'AcreWise Customer',
+          amount: parseInt(betAmount, 10),
+          customerId: betCustomerId
+        }
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setBetResult(`Betting Wallet Topup Successful! Ref: ${data.data.transactionRef}`);
-
-        // Save Receipt
-        await saveReceipt("Betting Wallet Credit", "BETTING", parseFloat(betAmount), data.data.transactionRef, `Credited betting account: ${betCustomerId} (${betProvider})`);
-
-        setBetCustomerId('');
-        setBetVerifiedName('');
-      }
+      const reference = data.data?.meta?.merchantTxRef || data.data?.id;
+      setBetResult(`Betting wallet request completed. Reference: ${reference}`);
+      await saveReceipt('Betting Wallet Credit', 'BETTING', parseFloat(betAmount), reference, `Credited betting account: ${betCustomerId} (${betProvider})`);
+      setBetCustomerId('');
+      setBetVerifiedName('');
     } catch (err) {
-      alert("Betting payment failed.");
+      alert(`Betting payment failed: ${err.message}`);
     }
     setLoading(false);
   }
@@ -1557,7 +1402,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             method: delCardSpec.method,
             url: delCardSpec.url,
             body: { cardToken: tokenId },
-            mockResponse: delCardSpec.responseBody
           })
         });
         setTokenizedCards(prev => prev.filter(c => c.cardToken !== tokenId));
@@ -1602,7 +1446,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               accountId: CONFIG.subAccountId || undefined
             }
           },
-          mockResponse: checkoutOrderSpec.responseBody
         })
       });
       const data = await res.json();
@@ -1645,7 +1488,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           method: "GET",
           url: `/v1/checkout/order/${checkoutOrderRef}`,
           body: {},
-          mockResponse: orderSpec.responseBody
         })
       });
       const data = await res.json();
@@ -1654,7 +1496,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         if (checkoutTenancy.isMarketplacePurchase) {
           await handleMarketplaceCheckout(checkoutTenancy.property);
         } else {
-          await executePaymentSimulation(amt, checkoutTenancy.nombaVirtualAccountId);
+          // The signed Nomba webhook is the source of reconciliation truth.
+          // Never fabricate a webhook from the browser after checkout.
+          await loadData();
         }
       } else {
         alert("Payment has not been confirmed yet. Please try again or check your Nomba transaction history.");
@@ -1667,14 +1511,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
   // Tenant rent/buy house from marketplace
   async function handleMarketplaceCheckout(propObj) {
-    // Generate mock virtual account reference
-    const tempVa = "va_market_" + Math.random().toString(36).substring(2, 10);
-
-    // Perform simulated checkout
     setLoading(true);
 
     const rentAmount = propObj.price;
     const isSale = propObj.type === 'SALE';
+    const accountData = await provisionNombaVirtualAccount(
+      `${userProfile?.name || 'AcreWise Tenant'} ${propObj.type === 'SALE' ? 'Escrow' : 'Rent'}`,
+      `acrewise_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+    );
+    const nombaVirtualAccountId = accountData.bankAccountNumber;
 
     // Create new tenancy/escrow
     if (isSale) {
@@ -1684,7 +1529,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  propertyId: "${propObj.id}",
  buyerId: "${userProfile.email}",
  amountHeld: ${rentAmount},
- nombaVirtualAccountId: "${tempVa}"
+ nombaVirtualAccountId: "${nombaVirtualAccountId}"
  ) { id status }
  }
  `;
@@ -1702,7 +1547,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  rentAmount: ${rentAmount},
  frequency: "${freq}",
  nextDueDate: "2026-08-01",
- nombaVirtualAccountId: "${tempVa}"
+ nombaVirtualAccountId: "${nombaVirtualAccountId}"
  ) { id }
  }
  `;
@@ -2237,7 +2082,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'developer' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
                     <Terminal className="w-4 h-4" />
-                    Developer Sandbox
+                    Nomba Production API
                   </button>
                 </div>
               </div>
@@ -2366,7 +2211,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       AcreWise Step-by-Step Console Guide
                     </h3>
                     <p className="text-gray-500 leading-relaxed">
-                      AcreWise enables you to coordinate property assets, tenancies, utilities, and payouts with integrated Nomba sandbox simulations. Here is how to navigate:
+                      AcreWise coordinates property assets, tenancies, utilities, and payouts through authenticated Nomba production services. Here is how to navigate:
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 font-mono text-[11px] text-zinc-450">
                       <div className="space-y-1 p-3 bg-slate-50/80 rounded border border-gray-200">
@@ -3408,15 +3253,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 </div>
               )}
 
-              {/* Landlord Tab: Developer Sandbox */}
+              {/* Landlord Tab: Nomba Production API */}
               {landlordTab === 'developer' && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-bold flex items-center gap-2">
                       <Terminal className="w-5 h-5 text-slate-700" />
-                      Nomba Developer Sandbox
+                      Nomba Production API
                     </h2>
-                    <p className="text-gray-500 text-sm mt-1">Interact with all 38+ Nomba API endpoints dynamically. Make live sandbox calls or inspect mocked response flows.</p>
+                    <p className="text-gray-500 text-sm mt-1">Execute authenticated Nomba API requests using the deployed production account.</p>
                   </div>
 
                   {/* Webhook logs viewer tabs */}
@@ -3426,12 +3271,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       className={`pb-3 font-semibold transition ${simulatorSubTab === 'playground' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-900'}`}
                     >
                       [⚡] API Playground Explorer (38+ APIs)
-                    </button>
-                    <button
-                      onClick={() => setSimulatorSubTab('trigger')}
-                      className={`pb-3 font-semibold transition ${simulatorSubTab === 'trigger' ? 'text-slate-700 border-b-2 border-slate-300' : 'text-gray-400 hover:text-gray-900'}`}
-                    >
-                      [+] Webhook Simulator
                     </button>
                     <button
                       onClick={() => setSimulatorSubTab('logs')}
@@ -3494,7 +3333,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               className="px-5 py-2.5 bg-slate-800 disabled:bg-gray-100 disabled:text-gray-400 text-gray-900 font-bold text-xs rounded transition uppercase tracking-wider flex items-center gap-1.5"
                             >
                               <Send className="w-4 h-4" />
-                              {apiLoading ? "Sending Request..." : "Run Sandbox API"}
+                              {apiLoading ? "Sending Request..." : "Run Production API"}
                             </button>
 
                             {apiResponseOutput && (
@@ -3591,7 +3430,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 font-mono text-[11px] text-zinc-450">
                           <div className="space-y-1 p-3 bg-slate-50/80 rounded border border-gray-200">
                             <span className="text-slate-700 font-bold text-xs block mb-0.5">Rent Checkout</span>
-                            <p>Click **Pay Rent / Simulate Inflow** on the ledger card to pay dues securely using Card OTP or Flash Transfer payment methods.</p>
+                          <p>Click **Pay Rent via Nomba** on the ledger card to pay dues through the hosted Nomba checkout.</p>
                           </div>
                           <div className="space-y-1 p-3 bg-slate-50/80 rounded border border-gray-200">
                             <span className="text-slate-700 font-bold text-xs block mb-0.5">Explore Houses</span>
@@ -3662,7 +3501,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             }}
                             className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded transition shadow"
                           >
-                            Pay Rent / Simulate Inflow
+                            Pay Rent via Nomba
                           </button>
                         </div>
                       </div>
@@ -3813,15 +3652,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
                               <button
                                 onClick={() => {
-                                  const tempVa = "va_market_" + Math.random().toString(36).substring(2, 10);
-                                  const mockTen = {
+                                  const checkoutTenancy = {
                                     id: "temp_market_lease_" + p.id,
                                     rentAmount: p.firstPaymentAmount ? parseFloat(p.firstPaymentAmount) : p.price,
-                                    nombaVirtualAccountId: tempVa,
+                                    nombaVirtualAccountId: '',
                                     property: p,
                                     isMarketplacePurchase: true
                                   };
-                                  setCheckoutTenancy(mockTen);
+                                  setCheckoutTenancy(checkoutTenancy);
                                   setCheckoutOption('exact');
                                   setPaymentStatus(null);
                                   setShowCheckout(true);

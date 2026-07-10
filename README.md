@@ -255,11 +255,12 @@ spring.jpa.show-sql=true
 spring.data.redis.host=localhost
 spring.data.redis.port=6379
 
-# Nomba Sandbox Settings
-nomba.api.client-key=e5e85b13-f560-4643-814e-c87435dbbc15
-nomba.api.secret-key=8/doS7Q3w77EANpk3vpgSrc05hhOiRWp3eBs01sXyZ1AmovtZUXlmrxie+xnEF2tR4q79t0IFufMD1d4JrkT8g==
-nomba.api.account-id=f666ef9b-888e-4799-85ce-acb505b28023
-nomba.api.sub-account-id=5a6c217c-010f-4c90-9517-382c9ec46595
+# Nomba production settings are supplied through deployment environment variables.
+nomba.api.base-url=${NOMBA_BASE_URL:https://api.nomba.com}
+nomba.api.client-key=${NOMBA_CLIENT_KEY}
+nomba.api.secret-key=${NOMBA_SECRET_KEY}
+nomba.api.account-id=${NOMBA_ACCOUNT_ID}
+nomba.api.sub-account-id=${NOMBA_SUB_ACCOUNT_ID}
 ```
 
 Build and run the backend server:
