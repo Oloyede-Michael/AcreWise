@@ -41,6 +41,9 @@ public class Tenancy {
     @Column(name = "nomba_virtual_account_id", unique = true, nullable = false)
     private String nombaVirtualAccountId;
 
+    @Column(name = "nomba_order_reference", unique = true)
+    private String nombaOrderReference;
+
     @Column(name = "created_at")
     private Instant createdAt;
 

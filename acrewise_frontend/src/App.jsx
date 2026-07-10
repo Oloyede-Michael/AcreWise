@@ -81,6 +81,8 @@ export default function App() {
       const path = window.location.pathname;
       if (path === '/auth') {
         setCurrentView('login');
+      } else if (path === '/checkout/complete') {
+        setCurrentView('dashboard');
       } else {
         setCurrentView('landing');
       }
@@ -146,6 +148,24 @@ export default function App() {
   const [isPaying, setIsPaying] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // null, redirecting, verifying, success, error
   const [checkoutOrderRef, setCheckoutOrderRef] = useState('');
+
+  useEffect(() => {
+    if (window.location.pathname !== '/checkout/complete') return;
+    try {
+      const pending = JSON.parse(sessionStorage.getItem('acrewise_pending_checkout') || 'null');
+      const returnedOrderRef = new URLSearchParams(window.location.search).get('orderReference');
+      if (pending) {
+        setUserProfile(pending.userProfile || null);
+        setUserRole(pending.userRole || 'tenant');
+        setCheckoutTenancy(pending.checkoutTenancy || null);
+        setCheckoutOrderRef(returnedOrderRef || pending.checkoutOrderRef || '');
+        setPaymentStatus(null);
+        setShowCheckout(true);
+      }
+    } catch (err) {
+      console.error('Could not restore pending checkout:', err);
+    }
+  }, []);
 
   // Tokenized Saved Cards
   const [tokenizedCards, setTokenizedCards] = useState([]);
@@ -477,6 +497,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  nextDueDate
  balance
  nombaVirtualAccountId
+ nombaOrderReference
  property {
  id
  title
@@ -499,6 +520,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  amountHeld
  status
  nombaVirtualAccountId
+ nombaOrderReference
+ nombaTransactionReference
  property {
  id
  title
@@ -649,6 +672,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const p3 = await fetchGraphQL(prop3Mutation);
 
     if (p1 && p1.listProperty) {
+      const va1 = await provisionNombaVirtualAccount('AcreWise Demo Tenant One', `acrewise_demo_${Date.now()}_one`);
       const t1Mutation = `
  mutation {
  createTenancy(
@@ -657,7 +681,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  rentAmount: 1200000.0,
  frequency: "MONTHLY",
  nextDueDate: "2026-08-01",
- nombaVirtualAccountId: "va_eko_atlantic_rent"
+ nombaVirtualAccountId: "${va1.bankAccountNumber}"
  ) { id }
  }
  `;
@@ -665,6 +689,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
 
     if (p2 && p2.listProperty) {
+      const va2 = await provisionNombaVirtualAccount('AcreWise Demo Tenant Two', `acrewise_demo_${Date.now()}_two`);
       const t2Mutation = `
  mutation {
  createTenancy(
@@ -673,7 +698,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  rentAmount: 3500000.0,
  frequency: "ANNUAL",
  nextDueDate: "2026-07-15",
- nombaVirtualAccountId: "va_lekki_villa_rent"
+ nombaVirtualAccountId: "${va2.bankAccountNumber}"
  ) { id }
  }
  `;
@@ -681,13 +706,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
 
     if (p3 && p3.listProperty) {
+      const va3 = await provisionNombaVirtualAccount('AcreWise Demo Escrow Buyer', `acrewise_demo_${Date.now()}_escrow`);
       const eMutation = `
  mutation {
  createEscrowTransaction(
  propertyId: "${p3.listProperty.id}",
  buyerId: "buyer@acrewise.com",
  amountHeld: 45000000.0,
- nombaVirtualAccountId: "va_banana_island_escrow"
+ nombaVirtualAccountId: "${va3.bankAccountNumber}"
  ) { id }
  }
  `;
@@ -713,23 +739,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       setLoading(false);
       return;
     }
-    // Update tenant email via createTenancy override mapping
-    const mutation = `
- mutation {
- createTenancy(
- propertyId: "${matched.property.id}",
- tenantId: "${userProfile.email}",
- rentAmount: ${matched.rentAmount},
- frequency: "${matched.frequency}",
- nextDueDate: "${matched.nextDueDate}",
- nombaVirtualAccountId: "${matched.nombaVirtualAccountId}"
- ) {
- id
- }
- }
- `;
+    const mutation = `mutation { claimTenancy(tenancyId: "${matched.id}", tenantId: "${userProfile.email}") { id tenantId } }`;
     const data = await fetchGraphQL(mutation);
-    if (data) {
+    if (data?.claimTenancy) {
       setClaimVaNumber('');
       await loadData();
       alert("Rented property claimed and successfully mapped to your profile!");
@@ -907,7 +919,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       if (propData && propData.listProperty) {
         const propId = propData.listProperty.id;
         if (inviteTenantEmail) {
-          const generatedVa = "va_" + Math.random().toString(36).substring(2, 10);
+          const virtualAccount = await provisionNombaVirtualAccount(
+            `AcreWise ${inviteTenantEmail.toLowerCase()}`,
+            `acrewise_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+          );
           const tenancyMutation = `
  mutation {
  createTenancy(
@@ -916,7 +931,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  rentAmount: ${parseFloat(newProp.price)},
  frequency: "${newProp.paymentFrequency}",
  nextDueDate: "2026-08-01",
- nombaVirtualAccountId: "${generatedVa}"
+ nombaVirtualAccountId: "${virtualAccount.bankAccountNumber}"
  ) { id }
  }
  `;
@@ -1061,6 +1076,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       if (data && data.code === "00") {
         setPayoutVerifiedName(data.data.accountName);
+        await fetchGraphQL(`mutation { updateLandlordPayoutDetails(email: "${userProfile.email}", bankAccountNumber: "${payoutAcctNumber}", bankCode: "${payoutBankCode}") { email } }`);
       } else {
         alert("Verification failed. Check account credentials.");
       }
@@ -1424,10 +1440,33 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     const orderRef = "ord_" + Math.random().toString(36).substring(2, 14) + Date.now().toString(36);
     setCheckoutOrderRef(orderRef);
 
-    const callbackUrl = "https://acrewise-9zrp.onrender.com/api/webhooks/nomba";
+    const callbackUrl = import.meta.env.VITE_CHECKOUT_CALLBACK_URL || `${window.location.origin}/checkout/complete`;
     const checkoutOrderSpec = APIS_METADATA.find(a => a.name === "Create an online checkout order");
 
+    let preparedCheckoutTenancy = checkoutTenancy;
     try {
+      if (checkoutTenancy.isMarketplacePurchase && !checkoutTenancy.escrowPrepared) {
+        const accountData = await provisionNombaVirtualAccount(
+          `${userProfile?.name || 'AcreWise Tenant'} ${checkoutTenancy.property.type === 'SALE' ? 'Escrow' : 'Rent'}`,
+          `acrewise_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+        );
+        const virtualAccountId = accountData.bankAccountNumber;
+        const property = checkoutTenancy.property;
+        const mutation = property.type === 'SALE'
+          ? `mutation { createEscrowTransaction(propertyId: "${property.id}", buyerId: "${userProfile.email}", amountHeld: ${property.price}, nombaVirtualAccountId: "${virtualAccountId}", nombaOrderReference: "${orderRef}") { id status } }`
+          : `mutation { createTenancy(propertyId: "${property.id}", tenantId: "${userProfile.email}", rentAmount: ${property.price}, frequency: "${property.paymentFrequency || 'MONTHLY'}", nextDueDate: "2026-08-01", nombaVirtualAccountId: "${virtualAccountId}", nombaOrderReference: "${orderRef}") { id } }`;
+        const prepared = await fetchGraphQL(mutation);
+        if (!prepared?.createEscrowTransaction && !prepared?.createTenancy) {
+          throw new Error('Could not prepare the property transaction before checkout.');
+        }
+        preparedCheckoutTenancy = {
+          ...checkoutTenancy,
+          nombaVirtualAccountId: virtualAccountId,
+          escrowPrepared: true,
+          escrowId: prepared.createEscrowTransaction?.id
+        };
+        setCheckoutTenancy(preparedCheckoutTenancy);
+      }
       const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1451,15 +1490,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       const checkoutLink = data?.data?.checkoutLink || data?.data?.checkoutUrl;
       if (res.ok && data?.code === "00" && checkoutLink) {
+        if (!checkoutTenancy.isMarketplacePurchase && checkoutTenancy.id) {
+          const linked = await fetchGraphQL(`mutation { linkTenancyOrder(tenancyId: "${preparedCheckoutTenancy.id}", orderReference: "${orderRef}") { id nombaOrderReference } }`);
+          if (!linked?.linkTenancyOrder) {
+            throw new Error('Could not link the Nomba order to this lease agreement.');
+          }
+        }
+        sessionStorage.setItem('acrewise_pending_checkout', JSON.stringify({
+          checkoutTenancy: preparedCheckoutTenancy,
+          checkoutOrderRef: orderRef,
+          userProfile,
+          userRole
+        }));
         setPaymentStatus('redirecting');
-        // Save the order reference then redirect to Nomba hosted checkout
-        await saveReceipt(
-          checkoutTenancy.isMarketplacePurchase ? "Marketplace Purchase" : "Rent Payment",
-          checkoutTenancy.isMarketplacePurchase ? "PURCHASE" : "RENT",
-          amt,
-          orderRef,
-          `Nomba checkout order created. Redirecting to payment page for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}`
-        );
         // Short delay so the user sees the status before redirect
         setTimeout(() => {
           window.location.href = checkoutLink;
@@ -1468,6 +1511,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         setPaymentStatus('error');
       }
     } catch (err) {
+      if (preparedCheckoutTenancy?.escrowPrepared && preparedCheckoutTenancy.property?.type === 'SALE') {
+        await fetchGraphQL(`mutation { rejectEscrow(id: "${preparedCheckoutTenancy.escrowId || ''}") { id } }`).catch(() => null);
+      }
       setPaymentStatus('error');
     }
     setIsPaying(false);
@@ -1491,15 +1537,24 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         })
       });
       const data = await res.json();
-      if (data && data.code === "00" && data.data && data.data.status === "PAID") {
+      const orderStatus = data?.data?.status || data?.data?.order?.status || data?.data?.order?.paymentStatus;
+      if (data?.code === "00" && ['PAID', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED'].includes(String(orderStatus).toUpperCase())) {
         setPaymentStatus('success');
         if (checkoutTenancy.isMarketplacePurchase) {
-          await handleMarketplaceCheckout(checkoutTenancy.property);
+          await handleMarketplaceCheckout(checkoutTenancy.property, checkoutOrderRef);
         } else {
           // The signed Nomba webhook is the source of reconciliation truth.
           // Never fabricate a webhook from the browser after checkout.
           await loadData();
+          await saveReceipt(
+            "Rent Payment",
+            "RENT",
+            amt,
+            checkoutOrderRef,
+            `Nomba checkout payment confirmed for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}`
+          );
         }
+        sessionStorage.removeItem('acrewise_pending_checkout');
       } else {
         alert("Payment has not been confirmed yet. Please try again or check your Nomba transaction history.");
       }
@@ -1510,8 +1565,21 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   }
 
   // Tenant rent/buy house from marketplace
-  async function handleMarketplaceCheckout(propObj) {
+  async function handleMarketplaceCheckout(propObj, orderReference) {
     setLoading(true);
+    try {
+    if (checkoutTenancy?.escrowPrepared) {
+      await saveReceipt(
+        propObj.type === 'SALE' ? 'House Purchase Escrow Deposit' : 'Rent First Payment',
+        propObj.type === 'SALE' ? 'PURCHASE' : 'RENT',
+        checkoutTenancy.rentAmount,
+        orderReference,
+        `Nomba checkout payment confirmed for ${propObj.title}.`
+      );
+      await loadData();
+      alert(`Checkout Completed! ${propObj.type === 'SALE' ? 'Purchase escrow is now awaiting handover.' : 'Lease agreement is active.'}`);
+      return;
+    }
 
     const rentAmount = propObj.price;
     const isSale = propObj.type === 'SALE';
@@ -1529,14 +1597,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  propertyId: "${propObj.id}",
  buyerId: "${userProfile.email}",
  amountHeld: ${rentAmount},
- nombaVirtualAccountId: "${nombaVirtualAccountId}"
+ nombaVirtualAccountId: "${nombaVirtualAccountId}",
+ nombaOrderReference: "${orderReference}"
  ) { id status }
  }
  `;
-      await fetchGraphQL(eMutation);
-      // Mark property as UNDER_ESCROW so it's taken off the open marketplace
-      await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${propObj.id}", status: "UNDER_ESCROW") { id } }`);
-      await saveReceipt("House Purchase Escrow Deposit", "PURCHASE", rentAmount, "ESC_" + Math.random().toString(36).substring(2, 10), `Escrow deposit held securely for: ${propObj.title}. Funds will be released to landlord upon handover confirmation.`);
+      const escrowData = await fetchGraphQL(eMutation);
+      if (!escrowData?.createEscrowTransaction) {
+        throw new Error('Could not create the purchase escrow record.');
+      }
+      await saveReceipt("House Purchase Escrow Deposit", "PURCHASE", rentAmount, orderReference, `Escrow deposit confirmed for: ${propObj.title}. Funds will be released to landlord upon handover confirmation.`);
     } else {
       const freq = propObj.paymentFrequency || 'MONTHLY';
       const tMutation = `
@@ -1547,48 +1617,26 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  rentAmount: ${rentAmount},
  frequency: "${freq}",
  nextDueDate: "2026-08-01",
- nombaVirtualAccountId: "${nombaVirtualAccountId}"
+ nombaVirtualAccountId: "${nombaVirtualAccountId}",
+ nombaOrderReference: "${orderReference}"
  ) { id }
  }
  `;
-      await fetchGraphQL(tMutation);
-      await saveReceipt("Rent First Payment", "RENT", rentAmount, "RNT_" + Math.random().toString(36).substring(2, 10), `First rent payment successful for: ${propObj.title}. Auto-subscription active — next payment due per ${freq.toLowerCase()} schedule.`);
-    }
-
-    // Decrement available units in PostgreSQL
-    const currentAvailable = propObj.availableUnits != null ? propObj.availableUnits : 1;
-    const nextAvailable = currentAvailable - 1;
-
-    const decUnitsMutation = `
- mutation {
- decrementPropertyUnits(propertyId: "${propObj.id}") {
- id
- availableUnits
- }
- }
- `;
-    await fetchGraphQL(decUnitsMutation);
-
-    // If all rooms/flats are taken, update status to SOLD or LET (taking it off the marketplace)
-    if (nextAvailable <= 0) {
-      const targetStatus = isSale ? "SOLD" : "LET";
-      const updateStatusMutation = `
- mutation {
- updatePropertyStatus(
- propertyId: "${propObj.id}",
- status: "${targetStatus}"
- ) {
- id
- status
- }
- }
- `;
-      await fetchGraphQL(updateStatusMutation);
+      const tenancyData = await fetchGraphQL(tMutation);
+      if (!tenancyData?.createTenancy) {
+        throw new Error('Could not create the lease agreement.');
+      }
+      await saveReceipt("Rent First Payment", "RENT", rentAmount, orderReference, `First rent payment confirmed for: ${propObj.title}. Auto-subscription active — next payment due per ${freq.toLowerCase()} schedule.`);
     }
 
     await loadData();
-    setLoading(false);
     alert(`Checkout Completed! House successfully secured.`);
+    } catch (err) {
+      alert(`Post-payment settlement setup failed: ${err.message}`);
+      await loadData();
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Landlord: Release or Reject an escrow transaction
@@ -1596,25 +1644,24 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setEscrowActionLoading(txn.id);
     try {
       if (action === 'release') {
-        // 1. Update property to SOLD
-        await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${txn.property.id}", status: "SOLD") { id } }`);
-        // 2. Save a release receipt for the landlord
+        const result = await fetchGraphQL(`mutation { releaseEscrow(id: "${txn.id}") { id status releasedAt nombaTransactionReference } }`);
+        if (!result?.releaseEscrow) throw new Error('Escrow release was not confirmed by the server.');
         await saveReceipt(
           "Escrow Funds Released",
           "PURCHASE",
           txn.amountHeld,
-          "REL_" + Math.random().toString(36).substring(2, 10),
-          `Escrow released for: ${txn.property.title}. Buyer: ${txn.buyerId}. Funds disbursed to landlord account.`
+          result.releaseEscrow.nombaTransactionReference || txn.nombaOrderReference || txn.id,
+          `Escrow released for: ${txn.property.title}. Buyer: ${txn.buyerId}. Nomba transfer confirmed.`
         );
-        alert(`✅ Escrow released! ₦${txn.amountHeld.toLocaleString()} disbursed. Property marked SOLD.`);
+        alert(`Escrow released. ₦${txn.amountHeld.toLocaleString()} was sent through Nomba.`);
       } else {
-        // Reject: put property back to LISTED
-        await fetchGraphQL(`mutation { updatePropertyStatus(propertyId: "${txn.property.id}", status: "LISTED") { id } }`);
-        alert(`❌ Escrow rejected. Property relisted on marketplace.`);
+        const result = await fetchGraphQL(`mutation { rejectEscrow(id: "${txn.id}") { id status } }`);
+        if (!result?.rejectEscrow) throw new Error('Escrow rejection was not confirmed by the server.');
+        alert(`Escrow rejected and the property was relisted after Nomba processing.`);
       }
       await loadData();
     } catch (err) {
-      console.error('Escrow action error:', err);
+      alert(`Escrow action failed: ${err.message}`);
     }
     setEscrowActionLoading(null);
     setEscrowConfirm(null);
@@ -2495,8 +2542,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       const isActioning = escrowActionLoading === e.id;
                       const statusColors = {
                         HELD: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                        PENDING_PAYMENT: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
                         RELEASED: 'bg-slate-800/10 text-slate-700 border-slate-300',
-                        REJECTED: 'bg-red-500/10 text-red-400 border-red-500/20',
+                        REFUNDED: 'bg-red-500/10 text-red-400 border-red-500/20',
                       };
                       return (
                         <div key={e.id} className="border border-gray-200 bg-white rounded-xl overflow-hidden">
@@ -2523,8 +2571,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                 <span className="text-gray-700">{e.buyerId}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-gray-400">Virtual Account</span>
-                                <span className="text-gray-500 truncate max-w-[140px]">{e.nombaVirtualAccountId}</span>
+                                <span className="text-gray-400">Nomba Order</span>
+                                <span className="text-gray-500 truncate max-w-[180px]">{e.nombaOrderReference || e.nombaVirtualAccountId}</span>
                               </div>
                               <div className="flex justify-between border-t border-gray-200 pt-1.5 mt-1.5">
                                 <span className="text-gray-400">Amount Held</span>
@@ -2532,15 +2580,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               </div>
                             </div>
 
-                            {e.status === 'HELD' && (
+                            {(e.status === 'HELD' || e.status === 'PENDING_PAYMENT') && (
                               <div className="grid grid-cols-2 gap-2 pt-1">
                                 <button
-                                  disabled={isActioning}
+                                  disabled={isActioning || e.status !== 'HELD'}
                                   onClick={() => setEscrowConfirm({ txn: e, action: 'release' })}
                                   className="py-2 bg-slate-800 disabled:opacity-50 text-gray-900 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
                                 >
                                   {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                  Release Funds
+                                  {e.status === 'HELD' ? 'Release Funds' : 'Awaiting Payment'}
                                 </button>
                                 <button
                                   disabled={isActioning}
@@ -2557,7 +2605,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Funds disbursed — property sold
                               </div>
                             )}
-                            {e.status === 'REJECTED' && (
+                            {e.status === 'REFUNDED' && (
                               <div className="flex items-center gap-1.5 text-red-400 text-xs font-mono">
                                 <ShieldAlert className="w-3.5 h-3.5" /> Rejected — property relisted
                               </div>
@@ -3551,11 +3599,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     {/* Global FX Converter Widget */}
                     <div className="flex items-center gap-2 px-3 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 rounded-lg font-mono text-xs shrink-0">
                       <ArrowLeftRight className="w-3.5 h-3.5 text-slate-700" />
-                      <span className="text-gray-500">1 NGN =</span>
+                      <span className="text-gray-500">1 {mktFxCurrency} = ₦</span>
                       {mktFxLoading ? (
                         <span className="text-gray-400 animate-pulse">...</span>
                       ) : (
-                        <span className="text-gray-900 font-bold">{mktFxRate ? mktFxRate.toFixed(6) : '—'}</span>
+                        <span className="text-gray-900 font-bold">{mktFxRate ? mktFxRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</span>
                       )}
                       <select
                         className="bg-transparent text-slate-700 font-bold focus:outline-none cursor-pointer"
@@ -3571,7 +3619,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     {properties
                       .filter(p => p.status === 'LISTED' || (p.status === 'LET' && p.availableUnits > 0))
                       .map(p => {
-                        const convertedPrice = mktFxRate && p.price ? (p.price * mktFxRate).toFixed(2) : null;
+                        const convertedPrice = mktFxRate && p.price ? (p.price / mktFxRate).toFixed(2) : null;
                         const projections = (() => { try { return JSON.parse(p.annualProjections || '[]'); } catch { return []; } })();
                         return (
                           <div key={p.id} className="border border-gray-200 bg-white hover:border-gray-300 rounded-xl flex flex-col overflow-hidden transition group">
@@ -3924,12 +3972,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="grid grid-cols-2 gap-2">
                       <button type="button" onClick={() => setCheckoutOption('exact')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'exact' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}>Exact Rent Due</button>
+                      {!checkoutTenancy.isMarketplacePurchase && <>
                       <button type="button" onClick={() => setCheckoutOption('partial')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'partial' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-gray-200'}`}>Partial Pay</button>
                       <button type="button" onClick={() => setCheckoutOption('overpaid')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'overpaid' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}>Overpay Rent</button>
                       <button type="button" onClick={() => setCheckoutOption('custom')}
                         className={`py-1.5 rounded font-bold text-[11px] uppercase transition ${checkoutOption === 'custom' ? 'bg-gray-100 text-slate-700 border border-slate-300' : 'bg-white shadow-sm border border-gray-200 text-gray-500 border border-zinc-855'}`}>Custom Amount</button>
+                      </>}
                     </div>
                   </div>
 

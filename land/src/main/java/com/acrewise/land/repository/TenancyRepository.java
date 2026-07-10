@@ -9,4 +9,8 @@ import java.util.UUID;
 @Repository
 public interface TenancyRepository extends JpaRepository<Tenancy, UUID> {
     Optional<Tenancy> findByNombaVirtualAccountId(String nombaVirtualAccountId);
+
+    Optional<Tenancy> findByNombaOrderReference(String nombaOrderReference);
+
+    boolean existsByProperty_IdAndTenantId(UUID propertyId, String tenantId);
 }

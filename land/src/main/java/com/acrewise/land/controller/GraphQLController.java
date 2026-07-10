@@ -2,6 +2,7 @@ package com.acrewise.land.controller;
 
 import com.acrewise.land.domain.*;
 import com.acrewise.land.repository.*;
+import com.acrewise.land.service.NombaAuthService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,11 +10,15 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
 
 @Controller
 @Slf4j
@@ -30,6 +35,14 @@ public class GraphQLController {
     private final UserProfileRepository userProfileRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ReceiptRepository receiptRepository;
+    private final NombaAuthService nombaAuthService;
+    private final WebClient webClient;
+
+    @Value("${nomba.api.account-id}")
+    private String nombaAccountId;
+
+    @Value("${nomba.api.sub-account-id:}")
+    private String nombaSubAccountId;
 
     // --- Component D Queries ---
 
@@ -134,6 +147,19 @@ public class GraphQLController {
     }
 
     @MutationMapping
+    public Landlord updateLandlordPayoutDetails(
+            @Argument String email,
+            @Argument String bankAccountNumber,
+            @Argument String bankCode
+    ) {
+        Landlord landlord = landlordRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Landlord not found."));
+        landlord.setBankAccountNumber(bankAccountNumber);
+        landlord.setBankCode(bankCode);
+        return landlordRepository.save(landlord);
+    }
+
+    @MutationMapping
     public Property createProperty(
             @Argument UUID landlordId,
             @Argument String title,
@@ -156,13 +182,15 @@ public class GraphQLController {
     }
 
     @MutationMapping
+    @Transactional
     public Tenancy createTenancy(
             @Argument UUID propertyId,
             @Argument String tenantId,
             @Argument Double rentAmount,
             @Argument String frequency,
             @Argument String nextDueDate,
-            @Argument String nombaVirtualAccountId
+            @Argument String nombaVirtualAccountId,
+            @Argument String nombaOrderReference
     ) {
         log.info("GraphQL Ingress: Creating tenancy for property: {}", propertyId);
         Property property = propertyRepository.findById(propertyId)
@@ -176,17 +204,35 @@ public class GraphQLController {
                 .nextDueDate(LocalDate.parse(nextDueDate))
                 .balance(BigDecimal.ZERO)
                 .nombaVirtualAccountId(nombaVirtualAccountId)
+                .nombaOrderReference(nombaOrderReference)
                 .build();
 
+        if (!"RENT".equalsIgnoreCase(property.getType())) {
+            throw new IllegalArgumentException("Lease agreements can only be created for RENT properties.");
+        }
+        if (tenancyRepository.existsByProperty_IdAndTenantId(propertyId, tenantId)) {
+            throw new IllegalStateException("This tenant already has a lease for the property.");
+        }
+        int availableUnits = property.getAvailableUnits() != null ? property.getAvailableUnits() : 1;
+        if (availableUnits <= 0) {
+            throw new IllegalStateException("Property has no available units.");
+        }
+        property.setAvailableUnits(availableUnits - 1);
+        if (property.getAvailableUnits() == 0) {
+            property.setStatus("LET");
+        }
+        propertyRepository.save(property);
         return tenancyRepository.save(tenancy);
     }
 
     @MutationMapping
+    @Transactional
     public EscrowTransaction createEscrowTransaction(
             @Argument UUID propertyId,
             @Argument String buyerId,
             @Argument Double amountHeld,
-            @Argument String nombaVirtualAccountId
+            @Argument String nombaVirtualAccountId,
+            @Argument String nombaOrderReference
     ) {
         log.info("GraphQL Ingress: Creating escrow transaction for property: {}", propertyId);
         Property property = propertyRepository.findById(propertyId)
@@ -197,10 +243,134 @@ public class GraphQLController {
                 .buyerId(buyerId)
                 .amountHeld(BigDecimal.valueOf(amountHeld))
                 .nombaVirtualAccountId(nombaVirtualAccountId)
-                .status("HELD")
+                .nombaOrderReference(nombaOrderReference)
+                .status("PENDING_PAYMENT")
                 .build();
-
+        if (!"SALE".equalsIgnoreCase(property.getType())) {
+            throw new IllegalArgumentException("Purchase escrow can only be created for SALE properties.");
+        }
+        if (escrowTransactionRepository.existsByProperty_IdAndStatus(propertyId, "PENDING_PAYMENT")
+                || escrowTransactionRepository.existsByProperty_IdAndStatus(propertyId, "HELD")) {
+            throw new IllegalStateException("This property already has an active purchase escrow.");
+        }
+        if ((property.getAvailableUnits() != null ? property.getAvailableUnits() : 1) <= 0) {
+            throw new IllegalStateException("Property has no available units.");
+        }
+        property.setStatus("UNDER_ESCROW");
+        int availableUnits = property.getAvailableUnits() != null ? property.getAvailableUnits() : 1;
+        property.setAvailableUnits(Math.max(0, availableUnits - 1));
+        propertyRepository.save(property);
         return escrowTransactionRepository.save(escrow);
+    }
+
+    @MutationMapping
+    public Tenancy linkTenancyOrder(@Argument UUID tenancyId, @Argument String orderReference) {
+        Tenancy tenancy = tenancyRepository.findById(tenancyId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenancy not found."));
+        tenancy.setNombaOrderReference(orderReference);
+        return tenancyRepository.save(tenancy);
+    }
+
+    @MutationMapping
+    public Tenancy claimTenancy(@Argument UUID tenancyId, @Argument String tenantId) {
+        Tenancy tenancy = tenancyRepository.findById(tenancyId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenancy not found."));
+        tenancy.setTenantId(tenantId);
+        return tenancyRepository.save(tenancy);
+    }
+
+    @MutationMapping
+    @Transactional
+    public EscrowTransaction releaseEscrow(@Argument UUID id) {
+        EscrowTransaction escrow = escrowTransactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Escrow transaction not found."));
+        if (!"HELD".equalsIgnoreCase(escrow.getStatus())) {
+            throw new IllegalStateException("Escrow can only be released after payment is held. Current status: " + escrow.getStatus());
+        }
+        Landlord landlord = escrow.getProperty().getLandlord();
+        if (landlord.getBankAccountNumber() == null || landlord.getBankCode() == null) {
+            throw new IllegalStateException("Landlord payout bank details are required before release.");
+        }
+
+        String transferReference = "acrewise_escrow_" + UUID.randomUUID();
+        Map<String, Object> payload = Map.of(
+                "amount", escrow.getAmountHeld().doubleValue(),
+                "accountNumber", landlord.getBankAccountNumber(),
+                "accountName", landlord.getName(),
+                "bankCode", landlord.getBankCode(),
+                "merchantTxRef", transferReference,
+                "senderName", "AcreWise Escrow",
+                "narration", "Escrow release to landlord"
+        );
+        Map response = nombaAuthService.getAccessToken()
+                .flatMap(token -> webClient.post()
+                        .uri(nombaSubAccountId == null || nombaSubAccountId.isBlank()
+                                ? "/v2/transfers/bank"
+                                : "/v2/transfers/bank/" + nombaSubAccountId)
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", nombaAccountId)
+                        .bodyValue(payload)
+                        .retrieve()
+                        .bodyToMono(Map.class))
+                .block();
+        if (!isSuccessfulNombaTransfer(response)) {
+            throw new IllegalStateException("Nomba escrow release transfer was not successful.");
+        }
+        escrow.setStatus("RELEASED");
+        escrow.setReleasedAt(java.time.Instant.now());
+        escrow.setNombaTransactionReference(transferReference);
+        escrow.getProperty().setStatus("SOLD");
+        propertyRepository.save(escrow.getProperty());
+        return escrowTransactionRepository.save(escrow);
+    }
+
+    @MutationMapping
+    @Transactional
+    public EscrowTransaction rejectEscrow(@Argument UUID id) {
+        EscrowTransaction escrow = escrowTransactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Escrow transaction not found."));
+        if ("HELD".equalsIgnoreCase(escrow.getStatus())) {
+            if (escrow.getNombaTransactionReference() == null) {
+                throw new IllegalStateException("Payment reference is missing; escrow cannot be refunded safely.");
+            }
+            Map<String, Object> payload = Map.of(
+                    "transactionId", escrow.getNombaTransactionReference(),
+                    "amount", escrow.getAmountHeld().doubleValue()
+            );
+            Map response = nombaAuthService.getAccessToken()
+                    .flatMap(token -> webClient.post()
+                            .uri("/v1/checkout/refund")
+                            .header("Authorization", "Bearer " + token)
+                            .header("accountId", nombaAccountId)
+                            .bodyValue(payload)
+                            .retrieve()
+                            .bodyToMono(Map.class))
+                    .block();
+            if (response == null || !"00".equals(String.valueOf(response.get("code")))) {
+                throw new IllegalStateException("Nomba escrow refund was not successful.");
+            }
+        }
+        if (!"PENDING_PAYMENT".equalsIgnoreCase(escrow.getStatus()) && !"HELD".equalsIgnoreCase(escrow.getStatus())) {
+            throw new IllegalStateException("Escrow cannot be rejected from status: " + escrow.getStatus());
+        }
+        escrow.setStatus("REFUNDED");
+        escrow.getProperty().setStatus("LISTED");
+        int units = escrow.getProperty().getAvailableUnits() != null ? escrow.getProperty().getAvailableUnits() : 0;
+        escrow.getProperty().setAvailableUnits(units + 1);
+        propertyRepository.save(escrow.getProperty());
+        return escrowTransactionRepository.save(escrow);
+    }
+
+    private boolean isSuccessfulNombaTransfer(Map response) {
+        if (response == null) return false;
+        String code = String.valueOf(response.get("code"));
+        if ("00".equals(code) || "200".equals(code)) return true;
+        Object data = response.get("data");
+        if (data instanceof Map<?, ?> dataMap) {
+            String status = String.valueOf(dataMap.get("status"));
+            return "SUCCESS".equalsIgnoreCase(status);
+        }
+        return false;
     }
 
     @MutationMapping

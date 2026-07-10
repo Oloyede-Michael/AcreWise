@@ -6,6 +6,7 @@ import com.acrewise.land.domain.Tenancy;
 import com.acrewise.land.repository.EscrowTransactionRepository;
 import com.acrewise.land.repository.RentPaymentRepository;
 import com.acrewise.land.repository.TenancyRepository;
+import com.acrewise.land.repository.PropertyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,20 +28,21 @@ public class ReconciliationEngine {
     private final TenancyRepository tenancyRepository;
     private final RentPaymentRepository rentPaymentRepository;
     private final EscrowTransactionRepository escrowTransactionRepository;
+    private final PropertyRepository propertyRepository;
     private final RedisLockService lockService;
 
     /**
      * Reactively processes the inbound webhook payment.
      * Uses Mono.fromCallable to run the blocking JPA operations on the boundedElastic thread pool.
      */
-    public Mono<String> processWebhookPayment(String virtualAccountId, BigDecimal amount, String nombaReference, Instant receivedAt) {
+    public Mono<String> processWebhookPayment(String virtualAccountId, String orderReference, BigDecimal amount, String nombaReference, Instant receivedAt) {
         return Mono.fromCallable(() -> {
-            return executeReconciliation(virtualAccountId, amount, nombaReference, receivedAt);
+            return executeReconciliation(virtualAccountId, orderReference, amount, nombaReference, receivedAt);
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
     @Transactional
-    public String executeReconciliation(String virtualAccountId, BigDecimal amount, String nombaReference, Instant receivedAt) {
+    public String executeReconciliation(String virtualAccountId, String orderReference, BigDecimal amount, String nombaReference, Instant receivedAt) {
         log.info("Reconciliation Engine: Starting payment matching for Ref [{}], Account [{}], Amount [{}]", 
                 nombaReference, virtualAccountId, amount);
 
@@ -60,6 +62,9 @@ public class ReconciliationEngine {
 
             // 3. Match against Tenancies first (Rent Collection Flow)
             Optional<Tenancy> tenancyOpt = tenancyRepository.findByNombaVirtualAccountId(virtualAccountId);
+            if (tenancyOpt.isEmpty() && orderReference != null && !orderReference.isBlank()) {
+                tenancyOpt = tenancyRepository.findByNombaOrderReference(orderReference);
+            }
             if (tenancyOpt.isPresent()) {
                 Tenancy tenancy = tenancyOpt.get();
                 BigDecimal rentDue = tenancy.getRentAmount();
@@ -102,14 +107,32 @@ public class ReconciliationEngine {
 
             // 4. Match against Escrow Transactions (Purchase Escrow Flow)
             Optional<EscrowTransaction> escrowOpt = escrowTransactionRepository.findByNombaVirtualAccountId(virtualAccountId);
+            if (escrowOpt.isEmpty() && orderReference != null && !orderReference.isBlank()) {
+                escrowOpt = escrowTransactionRepository.findByNombaOrderReference(orderReference);
+            }
             if (escrowOpt.isPresent()) {
                 EscrowTransaction escrow = escrowOpt.get();
-                // Set the escrow transaction status to HELD
-                escrow.setStatus("HELD");
+                int comparison = amount.compareTo(escrow.getAmountHeld());
+                String matchedStatus = comparison >= 0 ? "MATCHED" : "UNDERPAID";
+                if (comparison >= 0) {
+                    escrow.setStatus("HELD");
+                    escrow.getProperty().setStatus("UNDER_ESCROW");
+                    escrow.setNombaTransactionReference(nombaReference);
+                    propertyRepository.save(escrow.getProperty());
+                }
+                RentPayment payment = RentPayment.builder()
+                        .tenancy(null)
+                        .amount(amount)
+                        .nombaReference(nombaReference)
+                        .matchedStatus(matchedStatus)
+                        .receivedAt(receivedAt != null ? receivedAt : Instant.now())
+                        .build();
+                rentPaymentRepository.save(payment);
                 escrowTransactionRepository.save(escrow);
-                log.info("Reconciliation Engine: Escrow matched and status set to HELD for transaction [{}], property [{}]", 
+                log.info("Reconciliation Engine: Escrow payment [{}] processed as {} for transaction [{}], property [{}]",
+                        nombaReference, matchedStatus,
                         escrow.getId(), escrow.getProperty().getId());
-                return "ESCROW_HELD";
+                return comparison >= 0 ? "ESCROW_HELD" : "ESCROW_UNDERPAID";
             }
 
             // 5. Unmatched Reference Flow

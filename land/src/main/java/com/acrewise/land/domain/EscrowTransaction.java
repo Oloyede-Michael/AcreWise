@@ -34,6 +34,12 @@ public class EscrowTransaction {
     @Column(name = "nomba_virtual_account_id", nullable = false)
     private String nombaVirtualAccountId;
 
+    @Column(name = "nomba_order_reference", unique = true)
+    private String nombaOrderReference;
+
+    @Column(name = "nomba_transaction_reference")
+    private String nombaTransactionReference;
+
     @Column(name = "released_at")
     private Instant releasedAt;
 

@@ -9,4 +9,8 @@ import java.util.UUID;
 @Repository
 public interface EscrowTransactionRepository extends JpaRepository<EscrowTransaction, UUID> {
     Optional<EscrowTransaction> findByNombaVirtualAccountId(String nombaVirtualAccountId);
+
+    Optional<EscrowTransaction> findByNombaOrderReference(String nombaOrderReference);
+
+    boolean existsByProperty_IdAndStatus(UUID propertyId, String status);
 }
