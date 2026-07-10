@@ -1592,16 +1592,22 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           method: checkoutOrderSpec.method,
           url: checkoutOrderSpec.url,
           body: {
-            amount: amt,
-            orderReference: orderRef,
-            callbackUrl: callbackUrl,
-            customerId: userProfile?.email || "customer@acrewise.com"
+            order: {
+              amount: Number(amt).toFixed(2),
+              currency: "NGN",
+              orderReference: orderRef,
+              callbackUrl: callbackUrl,
+              customerEmail: userProfile?.email || "customer@acrewise.com",
+              customerId: userProfile?.email || "customer@acrewise.com",
+              accountId: CONFIG.subAccountId || undefined
+            }
           },
           mockResponse: checkoutOrderSpec.responseBody
         })
       });
       const data = await res.json();
-      if (data && data.code === "00" && data.data && data.data.checkoutUrl) {
+      const checkoutLink = data?.data?.checkoutLink || data?.data?.checkoutUrl;
+      if (res.ok && data?.code === "00" && checkoutLink) {
         setPaymentStatus('redirecting');
         // Save the order reference then redirect to Nomba hosted checkout
         await saveReceipt(
@@ -1613,7 +1619,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         );
         // Short delay so the user sees the status before redirect
         setTimeout(() => {
-          window.location.href = data.data.checkoutUrl;
+          window.location.href = checkoutLink;
         }, 800);
       } else {
         setPaymentStatus('error');

@@ -250,17 +250,21 @@ export const APIS_METADATA = [
     tag: "Online Checkout",
     description: "Create an online checkout order to receive card payments.",
     requestBody: {
-      amount: 15000.0,
-      orderReference: "order_ref_102",
-      callbackUrl: "https://webhook.site/test",
-      customerId: "cust_123"
+      order: {
+        amount: "15000.00",
+        currency: "NGN",
+        orderReference: "order_ref_102",
+        callbackUrl: "https://webhook.site/test",
+        customerEmail: "customer@example.com",
+        customerId: "cust_123"
+      }
     },
     responseBody: {
       code: "00",
       description: "Success",
       data: {
-        orderId: "checkout_order_441a",
-        checkoutUrl: "https://checkout.nomba.com/pay/checkout_order_441a"
+        checkoutLink: "https://checkout.nomba.com/pay/checkout_order_441a",
+        orderReference: "order_ref_102"
       }
     }
   },

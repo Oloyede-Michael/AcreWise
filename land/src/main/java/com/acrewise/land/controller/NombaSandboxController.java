@@ -23,12 +23,28 @@ public class NombaSandboxController {
     @Value("${nomba.api.account-id}")
     private String accountId;
 
+    @Value("${nomba.api.sub-account-id:}")
+    private String subAccountId;
+
     @PostMapping("/execute")
     public Mono<ResponseEntity<Map>> execute(@RequestBody Map<String, Object> request) {
         String name = (String) request.get("name");
         String method = (String) request.get("method");
         String url = (String) request.get("url");
         Map<String, Object> body = (Map<String, Object>) request.get("body");
+
+        // Checkout credits the sub-account from the order body while the header
+        // must remain the parent account. Keep this server-side so the frontend
+        // never needs to expose or duplicate deployment configuration.
+        if (body != null && "/v1/checkout/order".equals(url)) {
+            Object orderValue = body.get("order");
+            if (orderValue instanceof Map<?, ?> rawOrder) {
+                Map<String, Object> order = (Map<String, Object>) rawOrder;
+                if (!order.containsKey("accountId") && subAccountId != null && !subAccountId.isBlank()) {
+                    order.put("accountId", subAccountId);
+                }
+            }
+        }
 
         log.info("Sandbox Execution Request: {} ({} {})", name, method, url);
 
