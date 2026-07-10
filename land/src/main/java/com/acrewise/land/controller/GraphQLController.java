@@ -361,6 +361,65 @@ public class GraphQLController {
         return escrowTransactionRepository.save(escrow);
     }
 
+    @MutationMapping
+    @Transactional
+    public EscrowTransaction synchronizeEscrowPayment(@Argument UUID id) {
+        EscrowTransaction escrow = escrowTransactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Escrow transaction not found."));
+        if ("HELD".equalsIgnoreCase(escrow.getStatus())) {
+            return escrow;
+        }
+        if (!"PENDING_PAYMENT".equalsIgnoreCase(escrow.getStatus())) {
+            throw new IllegalStateException("Only pending escrows can be synchronized.");
+        }
+        if (escrow.getNombaOrderReference() == null || escrow.getNombaOrderReference().isBlank()) {
+            throw new IllegalStateException("Nomba order reference is missing for this escrow.");
+        }
+
+        Map response = nombaAuthService.getAccessToken()
+                .flatMap(token -> webClient.get()
+                        .uri("/v1/checkout/order/" + escrow.getNombaOrderReference())
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", nombaAccountId)
+                        .retrieve()
+                        .bodyToMono(Map.class))
+                .block();
+        Map data = response != null && response.get("data") instanceof Map
+                ? (Map) response.get("data") : response;
+        Map order = data != null && data.get("order") instanceof Map
+                ? (Map) data.get("order") : data;
+        String status = firstString(data, "status", "paymentStatus");
+        if (status == null && order != null) {
+            status = firstString(order, "status", "paymentStatus");
+        }
+        if (!isPaidStatus(status)) {
+            throw new IllegalStateException("Nomba order is not confirmed as paid. Current status: " + status);
+        }
+
+        String transactionReference = firstString(data, "transactionId", "transactionReference", "id");
+        if (transactionReference == null && order != null) {
+            transactionReference = firstString(order, "transactionId", "transactionReference", "id");
+        }
+        escrow.setNombaTransactionReference(transactionReference);
+        escrow.setStatus("HELD");
+        escrow.getProperty().setStatus("UNDER_ESCROW");
+        propertyRepository.save(escrow.getProperty());
+        return escrowTransactionRepository.save(escrow);
+    }
+
+    private boolean isPaidStatus(String status) {
+        return status != null && List.of("PAID", "SUCCESS", "SUCCESSFUL", "COMPLETED").contains(status.toUpperCase());
+    }
+
+    private String firstString(Map values, String... keys) {
+        if (values == null) return null;
+        for (String key : keys) {
+            Object value = values.get(key);
+            if (value != null && !String.valueOf(value).isBlank()) return String.valueOf(value);
+        }
+        return null;
+    }
+
     private boolean isSuccessfulNombaTransfer(Map response) {
         if (response == null) return false;
         String code = String.valueOf(response.get("code"));
@@ -462,6 +521,15 @@ public class GraphQLController {
         log.info("GraphQL Ingress: Listing property {} for landlord {}", title, landlordId);
         Landlord landlord = landlordRepository.findById(landlordId)
                 .orElseThrow(() -> new IllegalArgumentException("Landlord not found."));
+        if (price == null || price <= 0) {
+            throw new IllegalArgumentException("Property price must be greater than zero.");
+        }
+        if (firstPaymentAmount != null && (firstPaymentAmount <= 0 || firstPaymentAmount > price)) {
+            throw new IllegalArgumentException("First payment must be greater than zero and cannot exceed the property price.");
+        }
+        if (paymentFrequency == null || paymentFrequency.isBlank()) {
+            throw new IllegalArgumentException("Payment frequency is required for a rental property.");
+        }
 
         int units = totalUnits != null ? totalUnits : 1;
         boolean assured = ownershipDocumentUrl != null && !ownershipDocumentUrl.isBlank();

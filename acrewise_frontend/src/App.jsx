@@ -124,6 +124,8 @@ export default function App() {
   // Receipts Vault
   const [userReceipts, setUserReceipts] = useState([]);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   // Caretaker Modal
   const [showCaretakerModal, setShowCaretakerModal] = useState(false);
@@ -246,7 +248,7 @@ export default function App() {
   const [meterFormProvider, setMeterFormProvider] = useState('IKEDC');
 
   // Forms
-  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: 'Lekki', buildingType: 'Penthouse', price: '2400000', totalUnits: '1', landlordName: 'Chinedu Okafor', landlordEmail: 'chinedu@acrewise.com', landlordPhone: '+2348031234567', imageBase64: null, firstPaymentAmount: '', paymentFrequency: 'ANNUAL', annualProjections: ['', '', '', '', ''], ownershipDocumentUrl: '' });
+  const [newProp, setNewProp] = useState({ title: '', type: 'RENT', status: 'LISTED', area: '', buildingType: '', price: '', totalUnits: '1', landlordName: '', landlordEmail: '', landlordPhone: '', imageBase64: null, firstPaymentAmount: '', paymentFrequency: 'MONTHLY', annualProjections: ['', '', '', '', ''], ownershipDocumentUrl: '' });
   const [propImagePreview, setPropImagePreview] = useState(null); // Object URL for local preview
 
   function handlePropImageSelect(e) {
@@ -361,6 +363,23 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       }
     });
     return data.data;
+  }
+
+  async function loadWalletBalance() {
+    setWalletLoading(true);
+    try {
+      const data = await executeNombaApi({
+        name: 'Fetch live Nomba wallet balance',
+        method: 'GET',
+        url: CONFIG.subAccountId ? `/v1/accounts/${CONFIG.subAccountId}/balance` : '/v1/accounts/balance'
+      });
+      const raw = data?.data?.availableBalance ?? data?.data?.balance ?? data?.data?.available_balance;
+      setWalletBalance(raw === undefined || raw === null ? null : Number(raw));
+    } catch (err) {
+      setWalletBalance(null);
+    } finally {
+      setWalletLoading(false);
+    }
   }
 
   async function handleExecutePlaygroundApi() {
@@ -555,9 +574,13 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
   // Load Receipts & Chats
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile && tenantTab === 'receipts') {
       loadReceipts();
     }
+  }, [userProfile, tenantTab]);
+
+  useEffect(() => {
+    if (userProfile) loadWalletBalance();
   }, [userProfile]);
 
   // Load Chat Messages
@@ -940,7 +963,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         }
         setShowPropertyModal(false);
         setPropImagePreview(null);
-        setNewProp(prev => ({ ...prev, imageBase64: null }));
+        setNewProp({ title: '', type: 'RENT', status: 'LISTED', area: '', buildingType: '', price: '', totalUnits: '1', landlordName: userProfile.name, landlordEmail: userProfile.email, landlordPhone: '', imageBase64: null, firstPaymentAmount: '', paymentFrequency: 'MONTHLY', annualProjections: ['', '', '', '', ''], ownershipDocumentUrl: '' });
         await loadData();
       }
     }
@@ -1569,6 +1592,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setLoading(true);
     try {
     if (checkoutTenancy?.escrowPrepared) {
+      if (propObj.type === 'SALE' && checkoutTenancy.escrowId) {
+        const synced = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${checkoutTenancy.escrowId}") { id status } }`);
+        if (!synced?.synchronizeEscrowPayment || synced.synchronizeEscrowPayment.status !== 'HELD') {
+          throw new Error('Nomba confirmed the checkout, but the escrow payment is not held yet. Use Sync Payment from Purchase Escrows.');
+        }
+      }
       await saveReceipt(
         propObj.type === 'SALE' ? 'House Purchase Escrow Deposit' : 'Rent First Payment',
         propObj.type === 'SALE' ? 'PURCHASE' : 'RENT',
@@ -1639,6 +1668,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
   }
 
+  async function handleSyncEscrowPayment(txn) {
+    setEscrowActionLoading(txn.id);
+    try {
+      const result = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${txn.id}") { id status nombaTransactionReference } }`);
+      if (!result?.synchronizeEscrowPayment) throw new Error('Payment synchronization was not confirmed.');
+      await loadData();
+      alert('Nomba payment confirmed. The escrow is now held and ready for landlord release.');
+    } catch (err) {
+      alert(`Payment synchronization failed: ${err.message}`);
+    }
+    setEscrowActionLoading(null);
+  }
+
   // Landlord: Release or Reject an escrow transaction
   async function handleEscrowAction(txn, action) {
     setEscrowActionLoading(txn.id);
@@ -1690,6 +1732,29 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   const activeChatroomProperties = userRole === 'landlord'
     ? properties.filter(p => tenancies.some(t => t.property.id === p.id))
     : properties.filter(p => tenancies.some(t => t.property.id === p.id && t.tenantId === userProfile?.email));
+
+  const walletCard = (
+    <div className="p-5 bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <div className="p-2 bg-slate-100 rounded"><Coins className="w-5 h-5 text-slate-700" /></div>
+        <div>
+          <h3 className="font-bold text-sm text-gray-900">Nomba Wallet Balance</h3>
+          <p className="text-xs text-gray-500 mt-1">Live balance of the configured AcreWise Nomba account used for collections and payouts.</p>
+          {userRole === 'tenant' && activeTenantTenancyObj?.nombaVirtualAccountId && (
+            <p className="text-[11px] text-gray-400 font-mono mt-2">Linked collection account: <span className="text-slate-700">{activeTenantTenancyObj.nombaVirtualAccountId}</span></p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-xl font-bold text-slate-900">
+          {walletBalance === null ? 'Unavailable' : `₦${walletBalance.toLocaleString()}`}
+        </span>
+        <button type="button" onClick={loadWalletBalance} disabled={walletLoading} title="Refresh wallet balance" className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50">
+          <RefreshCw className={`w-4 h-4 ${walletLoading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+    </div>
+  );
 
   // Auto-select chat room if none selected
   useEffect(() => {
@@ -2252,6 +2317,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <p className="text-gray-500 text-sm mt-1">Real-time status of rent cash flows, arrears ledger, properties, and purchase escrow holdings.</p>
                   </div>
 
+                  {walletCard}
+
                   <div className="p-5 bg-white shadow-sm border border-gray-200/40 border border-gray-200 rounded-xl space-y-3 font-sans text-xs">
                     <h3 className="font-bold text-sm text-slate-700 flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-slate-700" />
@@ -2590,6 +2657,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                                   {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                                   {e.status === 'HELD' ? 'Release Funds' : 'Awaiting Payment'}
                                 </button>
+                                {e.status === 'PENDING_PAYMENT' && (
+                                  <button
+                                    disabled={isActioning}
+                                    onClick={() => handleSyncEscrowPayment(e)}
+                                    className="py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 disabled:opacity-50 text-blue-500 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
+                                  >
+                                    {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                    Sync Payment
+                                  </button>
+                                )}
                                 <button
                                   disabled={isActioning}
                                   onClick={() => setEscrowConfirm({ txn: e, action: 'reject' })}
@@ -3460,6 +3537,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               {/* Tenant Tab: My Lease Profile */}
               {tenantTab === 'my-rent' && (
                 <div className="space-y-8">
+                  {walletCard}
                   {activeTenantTenancyObj ? (
                     <div className="space-y-8">
                       <div>
@@ -3838,9 +3916,14 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               {/* Tenant Tab: Receipts Vault Locker */}
               {tenantTab === 'receipts' && (
                 <div className="space-y-6">
-                  <div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
                     <h3 className="text-lg font-bold">My Receipts Locker</h3>
                     <p className="text-gray-500 text-sm mt-1">Access all your digital billing vouchers for rent, power vend, and TV services stored in your secure vault.</p>
+                    </div>
+                    <button type="button" onClick={loadReceipts} className="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                      <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
