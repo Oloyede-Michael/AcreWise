@@ -45,6 +45,7 @@ public class NombaWebhookController {
             JsonNode data = root.get("data");
             JsonNode merchant = data != null ? data.get("merchant") : null;
             JsonNode transaction = data != null ? data.get("transaction") : null;
+            JsonNode order = data != null ? data.get("order") : null;
 
             String userId = merchant != null ? safeGet(merchant, "userId") : "";
             String walletId = merchant != null ? safeGet(merchant, "walletId") : "";
@@ -52,6 +53,7 @@ public class NombaWebhookController {
             String transactionType = transaction != null ? safeGet(transaction, "type") : "";
             String transactionTime = transaction != null ? safeGet(transaction, "time") : "";
             String responseCode = transaction != null ? safeGet(transaction, "responseCode") : "";
+            String orderReference = order != null ? safeGet(order, "orderReference") : safeGet(root, "orderReference");
 
             if ("null".equalsIgnoreCase(responseCode)) {
                 responseCode = "";
@@ -73,7 +75,7 @@ public class NombaWebhookController {
 
             if (!computedSignature.equals(inboundSignature)) {
                 log.warn("Security Alert: Signature mismatch! Rejecting request.");
-                return new WebhookContext(false, null, null, null, null, "Invalid cryptographic signature");
+                return new WebhookContext(false, null, null, null, null, null, "Invalid cryptographic signature");
             }
 
             // Extract the virtual account ID, transaction amount, and timestamp
@@ -107,14 +109,14 @@ public class NombaWebhookController {
             log.info("Webhook validated successfully! Event type processed: [{}], VirtualAccount: [{}], Reference: [{}]", 
                     eventType, virtualAccountId, transactionId);
             
-            return new WebhookContext(true, virtualAccountId, amount, transactionId, receivedAt, "OK");
+            return new WebhookContext(true, virtualAccountId, orderReference, amount, transactionId, receivedAt, "OK");
         }).flatMap(ctx -> {
             if (!ctx.isValid) {
                 return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ctx.message));
             }
             
             // Pass it to the reconciliation engine
-            return reconciliationEngine.processWebhookPayment(ctx.virtualAccountId, ctx.amount, ctx.nombaReference, ctx.receivedAt)
+            return reconciliationEngine.processWebhookPayment(ctx.virtualAccountId, ctx.orderReference, ctx.amount, ctx.nombaReference, ctx.receivedAt)
                     .map(status -> ResponseEntity.ok("Reconciliation Status: " + status));
         }).onErrorResume(err -> {
             log.error("Internal fault processing webhook payload: {}", err.getMessage());
@@ -130,6 +132,7 @@ public class NombaWebhookController {
     private record WebhookContext(
             boolean isValid,
             String virtualAccountId,
+            String orderReference,
             BigDecimal amount,
             String nombaReference,
             Instant receivedAt,

@@ -38,6 +38,9 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
     @Value("${nomba.api.account-id}")
     private String accountId;
 
+    @Value("${nomba.api.sub-account-id:}")
+    private String subAccountId;
+
     @Override
     public void hold(HoldRequest request, StreamObserver<HoldResponse> responseObserver) {
         log.info("gRPC Escrow Hold: Initiating hold for property: {}, buyer: {}", request.getPropertyId(), request.getBuyerId());
@@ -84,12 +87,15 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
             }
 
             Landlord landlord = escrow.getProperty().getLandlord();
-            String bankAccount = landlord.getBankAccountNumber() != null ? landlord.getBankAccountNumber() : "0123456789";
-            String bankCode = landlord.getBankCode() != null ? landlord.getBankCode() : "058";
+            if (landlord.getBankAccountNumber() == null || landlord.getBankCode() == null) {
+                throw new IllegalStateException("Landlord payout bank details are required before release.");
+            }
+            String bankAccount = landlord.getBankAccountNumber();
+            String bankCode = landlord.getBankCode();
             String transferRef = UUID.randomUUID().toString();
 
             // Execute the outbound payout REST API call to Nomba
-            boolean transferSuccess = executeNombaTransfer(escrow.getAmountHeld(), bankAccount, bankCode, transferRef, "Escrow release to landlord");
+            boolean transferSuccess = executeNombaTransfer(escrow.getAmountHeld(), bankAccount, landlord.getName(), bankCode, transferRef, "Escrow release to landlord");
 
             if (transferSuccess) {
                 escrow.setStatus("RELEASED");
@@ -126,12 +132,11 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
                 throw new IllegalStateException("Escrow transaction is not in HELD state. Current status: " + escrow.getStatus());
             }
 
-            // Refund to buyer, fallback bank account
-            String bankAccount = "9876543210";
-            String bankCode = "011";
-            String transferRef = UUID.randomUUID().toString();
-
-            boolean transferSuccess = executeNombaTransfer(escrow.getAmountHeld(), bankAccount, bankCode, transferRef, "Escrow refund to buyer");
+            if (escrow.getNombaTransactionReference() == null) {
+                throw new IllegalStateException("Nomba payment reference is required before refund.");
+            }
+            String transferRef = escrow.getNombaTransactionReference();
+            boolean transferSuccess = executeNombaRefund(escrow.getNombaTransactionReference(), escrow.getAmountHeld());
 
             if (transferSuccess) {
                 escrow.setStatus("REFUNDED");
@@ -155,13 +160,14 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
         }
     }
 
-    private boolean executeNombaTransfer(BigDecimal amount, String accountNumber, String bankCode, String reference, String narration) {
+    private boolean executeNombaTransfer(BigDecimal amount, String accountNumber, String accountName, String bankCode, String reference, String narration) {
         try {
             String accessToken = authService.getAccessToken().block();
 
             Map<String, Object> payload = Map.of(
                 "amount", amount.doubleValue(),
                 "accountNumber", accountNumber,
+                "accountName", accountName,
                 "bankCode", bankCode,
                 "merchantTxRef", reference,
                 "senderName", "AcreWise Escrow",
@@ -171,7 +177,9 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
             log.info("Nomba Outbound Payout Request: {}", payload);
 
             Map response = webClient.post()
-                    .uri("/v1/transfers")
+                    .uri(subAccountId == null || subAccountId.isBlank()
+                            ? "/v2/transfers/bank"
+                            : "/v2/transfers/bank/" + subAccountId)
                     .header("Authorization", "Bearer " + accessToken)
                     .header("accountId", accountId)
                     .bodyValue(payload)
@@ -190,10 +198,31 @@ public class RecoveryServiceImpl extends EscrowServiceGrpc.EscrowServiceImplBase
                 return "00".equals(code) || (response.get("status") != null && response.get("status").toString().toLowerCase().contains("success"));
             }
             
-            // Fallback for sandbox simulation if mock responses are not return "00" directly
-            return true;
+            return false;
         } catch (Exception e) {
             log.error("Exception during Nomba transfer: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean executeNombaRefund(String transactionId, BigDecimal amount) {
+        try {
+            String accessToken = authService.getAccessToken().block();
+            Map<String, Object> payload = Map.of(
+                    "transactionId", transactionId,
+                    "amount", amount.doubleValue()
+            );
+            Map response = webClient.post()
+                    .uri("/v1/checkout/refund")
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("accountId", accountId)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+            return response != null && "00".equals(String.valueOf(response.get("code")));
+        } catch (Exception e) {
+            log.error("Exception during Nomba refund: {}", e.getMessage());
             return false;
         }
     }
