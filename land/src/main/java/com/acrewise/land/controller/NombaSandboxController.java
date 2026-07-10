@@ -57,39 +57,43 @@ public class NombaSandboxController {
         }
 
         log.info("Nomba API Request: {} ({} {})", name, method, url);
+        final String requestName = name;
+        final String requestMethod = method;
+        final String requestUrl = url;
+        final Map<String, Object> requestBody = body;
 
         // Proxy ALL requests to the real Nomba API. On failure, return an error response.
         return authService.getAccessToken()
             .flatMap(token -> {
-                if ("GET".equalsIgnoreCase(method)) {
+                if ("GET".equalsIgnoreCase(requestMethod)) {
                     return webClient.get()
-                        .uri(url)
+                        .uri(requestUrl)
                         .header("Authorization", "Bearer " + token)
                         .header("accountId", accountId)
                         .retrieve()
                         .bodyToMono(Map.class)
                         .map(ResponseEntity::ok);
-                } else if ("POST".equalsIgnoreCase(method)) {
+                } else if ("POST".equalsIgnoreCase(requestMethod)) {
                     return webClient.post()
-                        .uri(url)
+                        .uri(requestUrl)
                         .header("Authorization", "Bearer " + token)
                         .header("accountId", accountId)
-                        .bodyValue(body != null ? body : Map.of())
+                        .bodyValue(requestBody != null ? requestBody : Map.of())
                         .retrieve()
                         .bodyToMono(Map.class)
                         .map(ResponseEntity::ok);
-                } else if ("PUT".equalsIgnoreCase(method)) {
+                } else if ("PUT".equalsIgnoreCase(requestMethod)) {
                     return webClient.put()
-                        .uri(url)
+                        .uri(requestUrl)
                         .header("Authorization", "Bearer " + token)
                         .header("accountId", accountId)
-                        .bodyValue(body != null ? body : Map.of())
+                        .bodyValue(requestBody != null ? requestBody : Map.of())
                         .retrieve()
                         .bodyToMono(Map.class)
                         .map(ResponseEntity::ok);
                 } else {
                     return webClient.delete()
-                        .uri(url)
+                        .uri(requestUrl)
                         .header("Authorization", "Bearer " + token)
                         .header("accountId", accountId)
                         .retrieve()
@@ -102,7 +106,7 @@ public class NombaSandboxController {
                 if (err instanceof org.springframework.web.reactive.function.client.WebClientResponseException wcre) {
                     nombaResponse = wcre.getResponseBodyAsString();
                 }
-                log.error("Nomba API call failed for {} ({} {}): {} | body: {}", name, method, url, err.getMessage(), nombaResponse);
+                log.error("Nomba API call failed for {} ({} {}): {} | body: {}", requestName, requestMethod, requestUrl, err.getMessage(), nombaResponse);
                 return Mono.just(ResponseEntity.ok(Map.of(
                     "code", "99",
                     "description", "Payment gateway unavailable: " + nombaResponse,
