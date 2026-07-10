@@ -33,6 +33,16 @@ public class NombaSandboxController {
         String url = (String) request.get("url");
         Map<String, Object> body = (Map<String, Object>) request.get("body");
 
+        if (subAccountId != null && !subAccountId.isBlank()) {
+            if ("/v1/accounts/virtual".equals(url) && name != null && name.contains("virtual account")) {
+                url = "/v1/accounts/virtual/" + subAccountId;
+            } else if ("/v1/terminals".equals(url) && name != null && name.contains("terminals")) {
+                url = "/v1/terminals/sub-account/" + subAccountId;
+            } else if ("/v2/transfers/bank".equals(url) && name != null && name.contains("sub account")) {
+                url = "/v2/transfers/bank/" + subAccountId;
+            }
+        }
+
         // Checkout credits the sub-account from the order body while the header
         // must remain the parent account. Keep this server-side so the frontend
         // never needs to expose or duplicate deployment configuration.
@@ -46,7 +56,7 @@ public class NombaSandboxController {
             }
         }
 
-        log.info("Sandbox Execution Request: {} ({} {})", name, method, url);
+        log.info("Nomba API Request: {} ({} {})", name, method, url);
 
         // Proxy ALL requests to the real Nomba API. On failure, return an error response.
         return authService.getAccessToken()

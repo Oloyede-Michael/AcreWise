@@ -39,5 +39,4 @@ postgres_data/
 *.png
 *.txt
 acrewise.env
-*env
 AcreWise(1).env
