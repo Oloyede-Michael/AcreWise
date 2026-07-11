@@ -40,6 +40,9 @@ public class NombaSandboxController {
                 url = "/v1/terminals/sub-account/" + subAccountId;
             } else if ("/v2/transfers/bank".equals(url) && name != null && name.contains("sub account")) {
                 url = "/v2/transfers/bank/" + subAccountId;
+            } else if (url != null && url.startsWith("/v1/transactions/accounts/single")) {
+                url = "/v1/transactions/accounts/" + subAccountId + "/single"
+                        + (url.contains("?") ? url.substring(url.indexOf('?')) : "");
             }
         }
 

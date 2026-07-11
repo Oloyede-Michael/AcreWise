@@ -66,6 +66,7 @@ type EscrowTransaction {
     nombaVirtualAccountId: String!
     nombaOrderReference: String
     nombaTransactionReference: String
+    nombaPayoutReference: String
     releasedAt: String
     createdAt: String
 }
@@ -147,12 +148,13 @@ type Mutation {
 
     # AcreWise Specific Mutations
     createLandlord(name: String!, email: String!, phone: String!): Landlord!
-    updateLandlordPayoutDetails(email: String!, bankAccountNumber: String!, bankCode: String!): Landlord!
+    updateLandlordPayoutDetails(email: String!, bankAccountNumber: String!, bankCode: String!, bankAccountName: String): Landlord!
     createProperty(landlordId: ID!, title: String!, type: String!, status: String!): Property!
     createTenancy(propertyId: ID!, tenantId: ID!, rentAmount: Float!, frequency: String!, nextDueDate: String!, nombaVirtualAccountId: String!, nombaOrderReference: String): Tenancy!
     createEscrowTransaction(propertyId: ID!, buyerId: ID!, amountHeld: Float!, nombaVirtualAccountId: String!, nombaOrderReference: String): EscrowTransaction!
     linkTenancyOrder(tenancyId: ID!, orderReference: String!): Tenancy!
     claimTenancy(tenancyId: ID!, tenantId: ID!): Tenancy!
+    linkEscrowOrder(escrowId: ID!, orderReference: String!): EscrowTransaction!
     releaseEscrow(id: ID!): EscrowTransaction!
     rejectEscrow(id: ID!): EscrowTransaction!
     synchronizeEscrowPayment(id: ID!): EscrowTransaction!

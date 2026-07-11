@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -150,12 +151,16 @@ public class GraphQLController {
     public Landlord updateLandlordPayoutDetails(
             @Argument String email,
             @Argument String bankAccountNumber,
-            @Argument String bankCode
+            @Argument String bankCode,
+            @Argument String bankAccountName
     ) {
         Landlord landlord = landlordRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Landlord not found."));
         landlord.setBankAccountNumber(bankAccountNumber);
         landlord.setBankCode(bankCode);
+        if (bankAccountName != null && !bankAccountName.isBlank()) {
+            landlord.setBankAccountName(bankAccountName);
+        }
         return landlordRepository.save(landlord);
     }
 
@@ -280,6 +285,14 @@ public class GraphQLController {
     }
 
     @MutationMapping
+    public EscrowTransaction linkEscrowOrder(@Argument UUID escrowId, @Argument String orderReference) {
+        EscrowTransaction escrow = escrowTransactionRepository.findById(escrowId)
+                .orElseThrow(() -> new IllegalArgumentException("Escrow transaction not found."));
+        escrow.setNombaOrderReference(orderReference);
+        return escrowTransactionRepository.save(escrow);
+    }
+
+    @MutationMapping
     @Transactional
     public EscrowTransaction releaseEscrow(@Argument UUID id) {
         EscrowTransaction escrow = escrowTransactionRepository.findById(id)
@@ -296,7 +309,8 @@ public class GraphQLController {
         Map<String, Object> payload = Map.of(
                 "amount", escrow.getAmountHeld().doubleValue(),
                 "accountNumber", landlord.getBankAccountNumber(),
-                "accountName", landlord.getName(),
+                "accountName", landlord.getBankAccountName() != null && !landlord.getBankAccountName().isBlank()
+                        ? landlord.getBankAccountName() : landlord.getName(),
                 "bankCode", landlord.getBankCode(),
                 "merchantTxRef", transferReference,
                 "senderName", "AcreWise Escrow",
@@ -313,15 +327,41 @@ public class GraphQLController {
                         .retrieve()
                         .bodyToMono(Map.class))
                 .block();
-        if (!isSuccessfulNombaTransfer(response)) {
-            throw new IllegalStateException("Nomba escrow release transfer was not successful.");
+        String transferStatus = nombaTransferStatus(response);
+        if ("PENDING_BILLING".equalsIgnoreCase(transferStatus) || "PROCESSING".equalsIgnoreCase(transferStatus)) {
+            escrow.setStatus("RELEASE_PENDING");
+            escrow.setNombaPayoutReference(transferReference);
+            return escrowTransactionRepository.save(escrow);
+        }
+        if (!"SUCCESS".equalsIgnoreCase(transferStatus)) {
+            throw new IllegalStateException("Nomba escrow release transfer was not successful: " + responseDescription(response));
         }
         escrow.setStatus("RELEASED");
         escrow.setReleasedAt(java.time.Instant.now());
-        escrow.setNombaTransactionReference(transferReference);
+        escrow.setNombaPayoutReference(transferReference);
         escrow.getProperty().setStatus("SOLD");
         propertyRepository.save(escrow.getProperty());
         return escrowTransactionRepository.save(escrow);
+    }
+
+    @Scheduled(fixedDelayString = "${nomba.escrow-sync-delay-ms:30000}", initialDelayString = "15000")
+    @Transactional
+    public void synchronizePendingEscrowsAutomatically() {
+        escrowTransactionRepository.findAll().stream()
+                .filter(escrow -> ("PENDING_PAYMENT".equalsIgnoreCase(escrow.getStatus())
+                        && escrow.getNombaOrderReference() != null && !escrow.getNombaOrderReference().isBlank())
+                        || "RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus()))
+                .forEach(escrow -> {
+                    try {
+                        if ("RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus())) {
+                            synchronizePendingPayout(escrow);
+                        } else {
+                            synchronizeEscrowPayment(escrow.getId());
+                        }
+                    } catch (Exception error) {
+                        log.debug("Pending escrow {} is not paid yet or could not be synchronized: {}", escrow.getId(), error.getMessage());
+                    }
+                });
     }
 
     @MutationMapping
@@ -376,9 +416,12 @@ public class GraphQLController {
             throw new IllegalStateException("Nomba order reference is missing for this escrow.");
         }
 
+        String statusUrl = nombaSubAccountId == null || nombaSubAccountId.isBlank()
+                ? "/v1/checkout/transaction?idType=ORDER_REFERENCE&id=" + escrow.getNombaOrderReference()
+                : "/v1/transactions/accounts/" + nombaSubAccountId + "/single?orderReference=" + escrow.getNombaOrderReference();
         Map response = nombaAuthService.getAccessToken()
                 .flatMap(token -> webClient.get()
-                        .uri("/v1/checkout/order/" + escrow.getNombaOrderReference())
+                        .uri(statusUrl)
                         .header("Authorization", "Bearer " + token)
                         .header("accountId", nombaAccountId)
                         .retrieve()
@@ -399,17 +442,29 @@ public class GraphQLController {
             throw new IllegalStateException("Nomba order is not confirmed as paid. Current status: " + status);
         }
 
-        String transactionReference = firstString(data, "transactionId", "transactionReference");
+        String transactionReference = firstString(data, "transactionId", "transactionReference", "paymentVendorReference", "merchantTxRef");
         if (transactionReference == null && order != null) {
-            transactionReference = firstString(order, "transactionId", "transactionReference");
+            transactionReference = firstString(order, "transactionId", "transactionReference", "paymentVendorReference", "merchantTxRef");
         }
         if (transactionReference == null && data != null && data.get("transaction") instanceof Map) {
             transactionReference = firstString((Map) data.get("transaction"), "transactionId", "transactionReference", "id");
+        }
+        Object paymentAmount = data == null ? null : firstValue(data, "amount", "onlineCheckoutAmount");
+        if (paymentAmount != null && new BigDecimal(String.valueOf(paymentAmount)).compareTo(escrow.getAmountHeld()) < 0) {
+            throw new IllegalStateException("Nomba payment is below the escrow amount.");
         }
         escrow.setNombaTransactionReference(transactionReference);
         escrow.setStatus("HELD");
         escrow.getProperty().setStatus("UNDER_ESCROW");
         propertyRepository.save(escrow.getProperty());
+        createPaymentReceiptIfMissing(
+                "House Purchase Escrow Deposit",
+                "PURCHASE",
+                escrow.getAmountHeld(),
+                escrow.getNombaOrderReference(),
+                "Nomba payment confirmed for " + escrow.getProperty().getTitle() + ". Funds are held pending landlord release.",
+                escrow.getBuyerId()
+        );
         return escrowTransactionRepository.save(escrow);
     }
 
@@ -428,6 +483,29 @@ public class GraphQLController {
         return null;
     }
 
+    private Object firstValue(Map values, String... keys) {
+        if (values == null) return null;
+        for (String key : keys) {
+            if (values.containsKey(key) && values.get(key) != null) return values.get(key);
+        }
+        return null;
+    }
+
+    private void createPaymentReceiptIfMissing(String title, String category, BigDecimal amount,
+                                               String reference, String details, String tenantEmail) {
+        if (reference == null || tenantEmail == null || tenantEmail.isBlank()) return;
+        if (receiptRepository.findByReference(reference).isEmpty()) {
+            receiptRepository.save(Receipt.builder()
+                    .title(title)
+                    .category(category)
+                    .amount(amount)
+                    .reference(reference)
+                    .details(details)
+                    .tenantEmail(tenantEmail)
+                    .build());
+        }
+    }
+
     private boolean isSuccessfulNombaTransfer(Map response) {
         if (response == null) return false;
         String code = String.valueOf(response.get("code"));
@@ -438,6 +516,39 @@ public class GraphQLController {
             return "SUCCESS".equalsIgnoreCase(status);
         }
         return false;
+    }
+
+    private String nombaTransferStatus(Map response) {
+        if (response == null) return null;
+        Object data = response.get("data");
+        if (data instanceof Map<?, ?> dataMap) {
+            Object status = dataMap.get("status");
+            if (status != null) return String.valueOf(status);
+        }
+        if ("00".equals(String.valueOf(response.get("code")))) return "SUCCESS";
+        return null;
+    }
+
+    private String responseDescription(Map response) {
+        return response == null ? "empty gateway response" : String.valueOf(response.getOrDefault("description", "unknown gateway response"));
+    }
+
+    private void synchronizePendingPayout(EscrowTransaction escrow) {
+        if (escrow.getNombaPayoutReference() == null || nombaSubAccountId == null || nombaSubAccountId.isBlank()) return;
+        Map response = nombaAuthService.getAccessToken()
+                .flatMap(token -> webClient.get()
+                        .uri("/v1/transactions/accounts/" + nombaSubAccountId + "/single?merchantTxRef=" + escrow.getNombaPayoutReference())
+                        .header("Authorization", "Bearer " + token)
+                        .header("accountId", nombaAccountId)
+                        .retrieve()
+                        .bodyToMono(Map.class))
+                .block();
+        if (!"SUCCESS".equalsIgnoreCase(nombaTransferStatus(response))) return;
+        escrow.setStatus("RELEASED");
+        escrow.setReleasedAt(java.time.Instant.now());
+        escrow.getProperty().setStatus("SOLD");
+        propertyRepository.save(escrow.getProperty());
+        escrowTransactionRepository.save(escrow);
     }
 
     @MutationMapping

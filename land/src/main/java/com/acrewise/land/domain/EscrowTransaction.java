@@ -40,6 +40,9 @@ public class EscrowTransaction {
     @Column(name = "nomba_transaction_reference")
     private String nombaTransactionReference;
 
+    @Column(name = "nomba_payout_reference")
+    private String nombaPayoutReference;
+
     @Column(name = "released_at")
     private Instant releasedAt;
 
