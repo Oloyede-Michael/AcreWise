@@ -457,14 +457,20 @@ public class GraphQLController {
         String statusUrl = nombaSubAccountId == null || nombaSubAccountId.isBlank()
                 ? "/v1/checkout/transaction?idType=ORDER_REFERENCE&id=" + escrow.getNombaOrderReference()
                 : "/v1/transactions/accounts/" + nombaSubAccountId + "/single?orderReference=" + escrow.getNombaOrderReference();
-        Map response = nombaAuthService.getAccessToken()
-                .flatMap(token -> webClient.get()
-                        .uri(statusUrl)
-                        .header("Authorization", "Bearer " + token)
-                        .header("accountId", nombaAccountId)
-                        .retrieve()
-                        .bodyToMono(Map.class))
-                .block();
+        Map response;
+        try {
+            response = nombaAuthService.getAccessToken()
+                    .flatMap(token -> webClient.get()
+                            .uri(statusUrl)
+                            .header("Authorization", "Bearer " + token)
+                            .header("accountId", nombaAccountId)
+                            .retrieve()
+                            .bodyToMono(Map.class))
+                    .block();
+        } catch (Exception error) {
+            escrow.setPaymentSyncError(nombaErrorMessage(error));
+            return escrowTransactionRepository.save(escrow);
+        }
         Map data = response != null && response.get("data") instanceof Map
                 ? (Map) response.get("data") : response;
         Map order = data != null && data.get("order") instanceof Map
@@ -497,6 +503,7 @@ public class GraphQLController {
             throw new IllegalStateException("Nomba payment is below the escrow amount.");
         }
         escrow.setNombaTransactionReference(transactionReference);
+        escrow.setPaymentSyncError(null);
         escrow.setStatus("HELD");
         escrow.getProperty().setStatus("UNDER_ESCROW");
         propertyRepository.save(escrow.getProperty());

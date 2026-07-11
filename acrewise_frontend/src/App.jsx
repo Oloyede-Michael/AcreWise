@@ -585,6 +585,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  nombaTransactionReference
  nombaPayoutReference
  payoutError
+ paymentSyncError
  property {
  id
  title
@@ -1656,9 +1657,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     try {
     if (checkoutTenancy?.escrowPrepared) {
       if (propObj.type === 'SALE' && checkoutTenancy.escrowId) {
-        const synced = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${checkoutTenancy.escrowId}") { id status } }`, {}, { throwOnError: true });
+        const synced = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${checkoutTenancy.escrowId}") { id status paymentSyncError } }`, {}, { throwOnError: true });
         if (!synced?.synchronizeEscrowPayment || synced.synchronizeEscrowPayment.status !== 'HELD') {
-          throw new Error('Nomba confirmed the checkout, but the escrow payment is not held yet. Use Sync Payment from Purchase Escrows.');
+          throw new Error(synced?.synchronizeEscrowPayment?.paymentSyncError || 'Nomba confirmed the checkout, but the escrow payment is not held yet. Use Sync Payment from Purchase Escrows.');
         }
       }
       const receipt = await saveReceipt(
@@ -1741,8 +1742,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function handleSyncEscrowPayment(txn) {
     setEscrowActionLoading(txn.id);
     try {
-      const result = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${txn.id}") { id status nombaTransactionReference } }`, {}, { throwOnError: true });
+      const result = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${txn.id}") { id status nombaTransactionReference paymentSyncError } }`, {}, { throwOnError: true });
       if (!result?.synchronizeEscrowPayment) throw new Error('Payment synchronization was not confirmed.');
+      if (result.synchronizeEscrowPayment.status !== 'HELD') {
+        throw new Error(result.synchronizeEscrowPayment.paymentSyncError || 'Nomba payment is not confirmed as held.');
+      }
       await loadData();
       alert('Nomba payment confirmed. The escrow is now held and ready for landlord release.');
     } catch (err) {
@@ -1797,6 +1801,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   const totalActiveArrears = tenancies.reduce((sum, t) => t.balance < 0 ? sum + Math.abs(t.balance) : sum, 0);
   const totalRentAmount = tenancies.reduce((sum, t) => sum + t.rentAmount, 0);
   const totalActiveEscrow = escrowTxns.reduce((acc, curr) => curr.status === 'HELD' ? acc + curr.amountHeld : acc, 0);
+  const activeEscrowTxns = escrowTxns.filter(escrow => !['RELEASED', 'REFUNDED'].includes(escrow.status));
 
   // Find tenant's tenancy
   const tenantActiveTenancies = tenancies.filter(t => t.tenantId === userProfile?.email);
@@ -2679,7 +2684,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     </div>
                   </div>
 
-                  {escrowTxns.length === 0 && (
+                  {activeEscrowTxns.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-24 border border-dashed border-gray-200 rounded-xl space-y-3 text-center">
                       <Lock className="w-10 h-10 text-zinc-700" />
                       <p className="text-gray-400 text-sm">No escrow transactions yet.</p>
@@ -2688,7 +2693,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {escrowTxns.map((e) => {
+                    {activeEscrowTxns.map((e) => {
                       const isActioning = escrowActionLoading === e.id;
                       const estimatedTransferFee = 20;
                       const requiredPayoutBalance = e.amountHeld + estimatedTransferFee;
@@ -2727,7 +2732,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-400">Nomba Order</span>
-                                <span className="text-gray-500 truncate max-w-[180px]">{e.nombaOrderReference || e.nombaVirtualAccountId}</span>
+                                <span className="text-gray-500 break-all text-right max-w-[230px]" title={e.nombaOrderReference || e.nombaVirtualAccountId}>{e.nombaOrderReference || e.nombaVirtualAccountId}</span>
                               </div>
                               <div className="flex justify-between border-t border-gray-200 pt-1.5 mt-1.5">
                                 <span className="text-gray-400">Amount Held</span>

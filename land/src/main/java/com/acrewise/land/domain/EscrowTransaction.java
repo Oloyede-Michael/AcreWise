@@ -46,6 +46,9 @@ public class EscrowTransaction {
     @Column(name = "payout_error", length = 2000)
     private String payoutError;
 
+    @Column(name = "payment_sync_error", length = 2000)
+    private String paymentSyncError;
+
     @Column(name = "released_at")
     private Instant releasedAt;
 
