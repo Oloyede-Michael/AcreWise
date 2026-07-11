@@ -59,3 +59,4 @@ nomba:
     client-key: ${NOMBA_CLIENT_KEY:}
     secret-key: ${NOMBA_SECRET_KEY:}
     sub-account-id: ${NOMBA_SUB_ACCOUNT_ID:}
+    checkout-fee: ${NOMBA_CHECKOUT_FEE:1.4}

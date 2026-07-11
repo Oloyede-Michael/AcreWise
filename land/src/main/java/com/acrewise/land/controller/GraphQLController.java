@@ -47,6 +47,9 @@ public class GraphQLController {
     @Value("${nomba.api.sub-account-id:}")
     private String nombaSubAccountId;
 
+    @Value("${nomba.api.checkout-fee:1.4}")
+    private BigDecimal nombaCheckoutFee;
+
     // --- Component D Queries ---
 
     @QueryMapping
@@ -319,7 +322,12 @@ public class GraphQLController {
             return escrowTransactionRepository.save(escrow);
         }
 
-        String transferReference = "acrewise_escrow_" + UUID.randomUUID();
+        String transferReference = escrow.getNombaPayoutReference() != null && !escrow.getNombaPayoutReference().isBlank()
+                ? escrow.getNombaPayoutReference()
+                : "acrewise_escrow_" + UUID.randomUUID();
+        escrow.setNombaPayoutReference(transferReference);
+        escrow.setPayoutError(null);
+        escrowTransactionRepository.save(escrow);
         Map<String, Object> payload = Map.of(
                 "amount", escrow.getAmountHeld().doubleValue(),
                 "accountNumber", landlord.getBankAccountNumber(),
@@ -374,7 +382,9 @@ public class GraphQLController {
         escrowTransactionRepository.findAll().stream()
                 .filter(escrow -> ("PENDING_PAYMENT".equalsIgnoreCase(escrow.getStatus())
                         && escrow.getNombaOrderReference() != null && !escrow.getNombaOrderReference().isBlank())
-                        || "RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus()))
+                        || ("RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus())
+                        || ("PAYOUT_FAILED".equalsIgnoreCase(escrow.getStatus())
+                        && escrow.getNombaPayoutReference() != null)))
                 .forEach(escrow -> {
                     try {
                         if ("RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus())) {
@@ -474,7 +484,12 @@ public class GraphQLController {
             transactionReference = firstString((Map) data.get("transaction"), "transactionId", "transactionReference", "id");
         }
         Object paymentAmount = data == null ? null : firstValue(data, "amount", "onlineCheckoutAmount");
-        if (paymentAmount != null && new BigDecimal(String.valueOf(paymentAmount)).compareTo(escrow.getAmountHeld()) < 0) {
+        BigDecimal chargedAmount = paymentAmount == null ? null : new BigDecimal(String.valueOf(paymentAmount));
+        BigDecimal creditedAmount = chargedAmount == null ? null : chargedAmount.subtract(
+                firstValue(data, "fixedCharge") == null ? nombaCheckoutFee : new BigDecimal(String.valueOf(firstValue(data, "fixedCharge")))
+        );
+        if (creditedAmount != null && creditedAmount.compareTo(escrow.getAmountHeld()) < 0
+                && chargedAmount.compareTo(escrow.getAmountHeld()) < 0) {
             throw new IllegalStateException("Nomba payment is below the escrow amount.");
         }
         escrow.setNombaTransactionReference(transactionReference);
@@ -576,6 +591,7 @@ public class GraphQLController {
                 .block();
         if (!"SUCCESS".equalsIgnoreCase(nombaTransferStatus(response))) return;
         escrow.setStatus("RELEASED");
+        escrow.setPayoutError(null);
         escrow.setReleasedAt(java.time.Instant.now());
         escrow.getProperty().setStatus("SOLD");
         propertyRepository.save(escrow.getProperty());

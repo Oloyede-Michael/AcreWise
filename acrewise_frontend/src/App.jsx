@@ -63,6 +63,9 @@ const CONFIG = {
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const NOMBA_CHECKOUT_FEE = Number(import.meta.env.VITE_NOMBA_CHECKOUT_FEE || 1.4);
+const NOMBA_TRANSFER_FEE = Number(import.meta.env.VITE_NOMBA_TRANSFER_FEE || 20);
+const NOMBA_SETTLEMENT_FEE = NOMBA_CHECKOUT_FEE + NOMBA_TRANSFER_FEE;
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing'); // landing, login, dashboard
@@ -150,6 +153,7 @@ export default function App() {
   const [isPaying, setIsPaying] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // null, redirecting, verifying, success, error
   const [checkoutOrderRef, setCheckoutOrderRef] = useState('');
+  const [checkoutChargeAmount, setCheckoutChargeAmount] = useState(null);
   const [checkoutReceipt, setCheckoutReceipt] = useState(null);
 
   useEffect(() => {
@@ -162,6 +166,7 @@ export default function App() {
         setUserRole(pending.userRole || 'tenant');
         setCheckoutTenancy(pending.checkoutTenancy || null);
         setCheckoutOrderRef(returnedOrderRef || pending.checkoutOrderRef || '');
+        setCheckoutChargeAmount(pending.checkoutChargeAmount || null);
         setPaymentStatus(null);
         setShowCheckout(true);
       }
@@ -1485,10 +1490,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
   // Checkout modal pay — creates a real Nomba online checkout order and redirects
   async function handleCheckoutPortalPay() {
-    let amt = checkoutTenancy.rentAmount;
-    if (checkoutOption === 'partial') amt = checkoutTenancy.rentAmount * 0.75;
-    if (checkoutOption === 'overpaid') amt = checkoutTenancy.rentAmount * 1.25;
-    if (checkoutOption === 'custom') amt = parseFloat(customPayAmount) || 0;
+    let baseAmount = checkoutTenancy.rentAmount;
+    if (checkoutOption === 'partial') baseAmount = checkoutTenancy.rentAmount * 0.75;
+    if (checkoutOption === 'overpaid') baseAmount = checkoutTenancy.rentAmount * 1.25;
+    if (checkoutOption === 'custom') baseAmount = parseFloat(customPayAmount) || 0;
+    if (!baseAmount || baseAmount <= 0) {
+      alert('Enter a valid payment amount.');
+      return;
+    }
+    const amt = Math.round((baseAmount + NOMBA_SETTLEMENT_FEE) * 100) / 100;
+    setCheckoutChargeAmount(amt);
 
     setIsPaying(true);
     setCheckoutReceipt(null);
@@ -1563,6 +1574,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         sessionStorage.setItem('acrewise_pending_checkout', JSON.stringify({
           checkoutTenancy: preparedCheckoutTenancy,
           checkoutOrderRef: nombaOrderRef,
+          checkoutChargeAmount: amt,
           userProfile,
           userRole
         }));
@@ -1587,7 +1599,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function handleVerifyCheckoutOrder() {
     if (!checkoutOrderRef) return;
     setIsPaying(true);
-    const amt = checkoutTenancy.rentAmount;
+    const amt = checkoutChargeAmount || Math.round((checkoutTenancy.rentAmount + NOMBA_SETTLEMENT_FEE) * 100) / 100;
     const orderSpec = APIS_METADATA.find(a => a.name && a.name.includes("Get Order details"));
     try {
       const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
@@ -1618,7 +1630,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             "RENT",
             amt,
             checkoutOrderRef,
-            `Nomba checkout payment confirmed for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}`
+            `Nomba checkout payment confirmed for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}. Listed amount: ₦${checkoutTenancy.rentAmount.toLocaleString()}; settlement charge: ₦${NOMBA_SETTLEMENT_FEE.toFixed(2)}.`
           );
           setCheckoutReceipt(receipt || {
             title: 'Rent Payment', category: 'RENT', amount: amt,
@@ -1652,16 +1664,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const receipt = await saveReceipt(
         propObj.type === 'SALE' ? 'House Purchase Escrow Deposit' : 'Rent First Payment',
         propObj.type === 'SALE' ? 'PURCHASE' : 'RENT',
-        checkoutTenancy.rentAmount,
+        checkoutChargeAmount || Math.round((checkoutTenancy.rentAmount + NOMBA_SETTLEMENT_FEE) * 100) / 100,
         orderReference,
-        `Nomba checkout payment confirmed for ${propObj.title}.`
+        `Nomba checkout payment confirmed for ${propObj.title}. Listed amount: ₦${checkoutTenancy.rentAmount.toLocaleString()}; settlement charge: ₦${NOMBA_SETTLEMENT_FEE.toFixed(2)}.`
       );
       setCheckoutReceipt(receipt || {
         title: propObj.type === 'SALE' ? 'House Purchase Escrow Deposit' : 'Rent First Payment',
         category: propObj.type === 'SALE' ? 'PURCHASE' : 'RENT',
-        amount: checkoutTenancy.rentAmount,
+        amount: checkoutChargeAmount || Math.round((checkoutTenancy.rentAmount + NOMBA_SETTLEMENT_FEE) * 100) / 100,
         reference: orderReference,
-        details: `Nomba checkout payment confirmed for ${propObj.title}.`
+        details: `Nomba checkout payment confirmed for ${propObj.title}. Listed amount: ₦${checkoutTenancy.rentAmount.toLocaleString()}; settlement charge: ₦${NOMBA_SETTLEMENT_FEE.toFixed(2)}.`
       });
       await loadData();
       alert(`Checkout Completed! ${propObj.type === 'SALE' ? 'Purchase escrow is now awaiting handover.' : 'Lease agreement is active.'}`);
@@ -1693,7 +1705,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       if (!escrowData?.createEscrowTransaction) {
         throw new Error('Could not create the purchase escrow record.');
       }
-      await saveReceipt("House Purchase Escrow Deposit", "PURCHASE", rentAmount, orderReference, `Escrow deposit confirmed for: ${propObj.title}. Funds will be released to landlord upon handover confirmation.`);
+      await saveReceipt("House Purchase Escrow Deposit", "PURCHASE", rentAmount + NOMBA_SETTLEMENT_FEE, orderReference, `Escrow deposit confirmed for: ${propObj.title}. Listed amount: ₦${rentAmount.toLocaleString()}; Nomba settlement charge: ₦${NOMBA_SETTLEMENT_FEE.toFixed(2)}.`);
     } else {
       const freq = propObj.paymentFrequency || 'MONTHLY';
       const tMutation = `
@@ -1713,7 +1725,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       if (!tenancyData?.createTenancy) {
         throw new Error('Could not create the lease agreement.');
       }
-      await saveReceipt("Rent First Payment", "RENT", rentAmount, orderReference, `First rent payment confirmed for: ${propObj.title}. Auto-subscription active — next payment due per ${freq.toLowerCase()} schedule.`);
+      await saveReceipt("Rent First Payment", "RENT", rentAmount + NOMBA_SETTLEMENT_FEE, orderReference, `First rent payment confirmed for: ${propObj.title}. Listed amount: ₦${rentAmount.toLocaleString()}; Nomba settlement charge: ₦${NOMBA_SETTLEMENT_FEE.toFixed(2)}. Auto-subscription active — next payment due per ${freq.toLowerCase()} schedule.`);
     }
 
     await loadData();
@@ -2678,6 +2690,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {escrowTxns.map((e) => {
                       const isActioning = escrowActionLoading === e.id;
+                      const estimatedTransferFee = 20;
+                      const requiredPayoutBalance = e.amountHeld + estimatedTransferFee;
+                      const insufficientBalance = walletBalance !== null && walletBalance < requiredPayoutBalance;
                       const statusColors = {
                         HELD: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
                         PENDING_PAYMENT: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -2723,8 +2738,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             {(e.status === 'HELD' || e.status === 'PENDING_PAYMENT' || e.status === 'PAYOUT_FAILED') && (
                               <div className="grid grid-cols-2 gap-2 pt-1">
                                 <button
-                                  disabled={isActioning || (e.status !== 'HELD' && e.status !== 'PAYOUT_FAILED')}
+                                  disabled={isActioning || insufficientBalance || (e.status !== 'HELD' && e.status !== 'PAYOUT_FAILED')}
                                   onClick={() => setEscrowConfirm({ txn: e, action: 'release' })}
+                                  title={insufficientBalance ? 'Available Nomba balance is below this escrow amount' : 'Release escrow funds'}
                                   className="py-2 bg-slate-800 disabled:opacity-50 text-gray-900 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
                                 >
                                   {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
@@ -2763,6 +2779,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             {e.status === 'PAYOUT_FAILED' && (
                               <div className="flex items-start gap-1.5 text-rose-500 text-xs font-mono">
                                 <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {e.payoutError || 'Nomba rejected the payout. Verify the landlord bank details and retry.'}
+                              </div>
+                            )}
+                            {insufficientBalance && (e.status === 'HELD' || e.status === 'PAYOUT_FAILED') && (
+                              <div className="flex items-start gap-1.5 text-amber-600 text-xs font-mono">
+                                <Coins className="w-3.5 h-3.5 mt-0.5 shrink-0" /> Available Nomba balance: ₦{walletBalance.toLocaleString()} — about ₦{requiredPayoutBalance.toLocaleString()} is required including the transfer fee.
                               </div>
                             )}
                             {e.status === 'REFUNDED' && (
@@ -4134,6 +4155,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <div className="p-3 bg-white shadow-sm border border-gray-200/30 rounded border border-gray-200 font-mono text-[11px] space-y-1">
                     <p className="text-gray-400">Property: <span className="text-gray-900 font-bold">{checkoutTenancy.property?.title || 'N/A'}</span></p>
                     <p className="text-gray-400">Amount Due: <span className="text-gray-900 font-bold">₦{checkoutTenancy.rentAmount?.toLocaleString() || '0'}</span></p>
+                    <p className="text-gray-400">Settlement charge: <span className="text-amber-600 font-semibold">₦{NOMBA_SETTLEMENT_FEE.toFixed(2)}</span></p>
                     <p className="text-gray-400">Reference: <span className="text-slate-700 font-semibold">{checkoutTenancy.nombaVirtualAccountId}</span></p>
                   </div>
 
@@ -4156,9 +4178,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                   <div className="p-3 bg-slate-50 rounded border border-gray-200 flex items-center justify-between text-xs font-mono">
                     <span className="text-gray-400">Pay Amount:</span>
                     <span className="text-base font-extrabold text-gray-900">
-                      {checkoutOption === 'exact' && `₦${checkoutTenancy.rentAmount.toLocaleString()}`}
-                      {checkoutOption === 'partial' && `₦${(checkoutTenancy.rentAmount * 0.75).toLocaleString()}`}
-                      {checkoutOption === 'overpaid' && `₦${(checkoutTenancy.rentAmount * 1.25).toLocaleString()}`}
+                      {checkoutOption === 'exact' && `₦${(checkoutTenancy.rentAmount + NOMBA_SETTLEMENT_FEE).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      {checkoutOption === 'partial' && `₦${(checkoutTenancy.rentAmount * 0.75 + NOMBA_SETTLEMENT_FEE).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      {checkoutOption === 'overpaid' && `₦${(checkoutTenancy.rentAmount * 1.25 + NOMBA_SETTLEMENT_FEE).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       {checkoutOption === 'custom' && (
                         <input type="number" placeholder="Amount in NGN"
                           className="bg-transparent border-b border-gray-300 text-gray-900 font-extrabold focus:outline-none w-28 text-right pr-1"
@@ -4166,6 +4188,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       )}
                     </span>
                   </div>
+                  <p className="text-[10px] text-gray-400 font-mono">The listed rent or purchase amount remains unchanged. The settlement charge covers the observed Nomba checkout and landlord transfer fees.</p>
                 </div>
               ) : paymentStatus === 'redirecting' ? (
                 <div className="py-8 flex flex-col items-center text-center space-y-4 font-mono">
