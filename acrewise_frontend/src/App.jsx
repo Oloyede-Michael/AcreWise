@@ -547,6 +547,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  nombaOrderReference
  nombaTransactionReference
  nombaPayoutReference
+ payoutError
  property {
  id
  title
@@ -1719,9 +1720,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setEscrowActionLoading(txn.id);
     try {
       if (action === 'release') {
-        const result = await fetchGraphQL(`mutation { releaseEscrow(id: "${txn.id}") { id status releasedAt nombaTransactionReference nombaPayoutReference } }`);
+        const result = await fetchGraphQL(`mutation { releaseEscrow(id: "${txn.id}") { id status releasedAt nombaTransactionReference nombaPayoutReference payoutError } }`, {}, { throwOnError: true });
         if (!result?.releaseEscrow) throw new Error('Escrow release was not confirmed by the server.');
-        if (result.releaseEscrow.status === 'RELEASE_PENDING') {
+        if (result.releaseEscrow.status === 'PAYOUT_FAILED') {
+          throw new Error(result.releaseEscrow.payoutError || 'Nomba rejected the landlord payout.');
+        } else if (result.releaseEscrow.status === 'RELEASE_PENDING') {
           alert(`Nomba accepted the payout for processing. Reference: ${result.releaseEscrow.nombaPayoutReference || 'pending'}. The escrow will update automatically when the bank transfer completes.`);
         } else {
           await saveReceipt(
@@ -2655,6 +2658,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         HELD: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
                         PENDING_PAYMENT: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
                         RELEASE_PENDING: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+                        PAYOUT_FAILED: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
                         RELEASED: 'bg-slate-800/10 text-slate-700 border-slate-300',
                         REFUNDED: 'bg-red-500/10 text-red-400 border-red-500/20',
                       };
@@ -2692,15 +2696,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               </div>
                             </div>
 
-                            {(e.status === 'HELD' || e.status === 'PENDING_PAYMENT') && (
+                            {(e.status === 'HELD' || e.status === 'PENDING_PAYMENT' || e.status === 'PAYOUT_FAILED') && (
                               <div className="grid grid-cols-2 gap-2 pt-1">
                                 <button
-                                  disabled={isActioning || e.status !== 'HELD'}
+                                  disabled={isActioning || (e.status !== 'HELD' && e.status !== 'PAYOUT_FAILED')}
                                   onClick={() => setEscrowConfirm({ txn: e, action: 'release' })}
                                   className="py-2 bg-slate-800 disabled:opacity-50 text-gray-900 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
                                 >
                                   {isActioning ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                  {e.status === 'HELD' ? 'Release Funds' : 'Awaiting Payment'}
+                                  {e.status === 'HELD' || e.status === 'PAYOUT_FAILED' ? 'Release Funds' : 'Awaiting Payment'}
                                 </button>
                                 {e.status === 'PENDING_PAYMENT' && (
                                   <button
@@ -2730,6 +2734,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             {e.status === 'RELEASE_PENDING' && (
                               <div className="flex items-center gap-1.5 text-violet-500 text-xs font-mono">
                                 <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Payout accepted by Nomba — awaiting bank completion
+                              </div>
+                            )}
+                            {e.status === 'PAYOUT_FAILED' && (
+                              <div className="flex items-start gap-1.5 text-rose-500 text-xs font-mono">
+                                <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {e.payoutError || 'Nomba rejected the payout. Verify the landlord bank details and retry.'}
                               </div>
                             )}
                             {e.status === 'REFUNDED' && (
