@@ -20,6 +20,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.Map;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Controller
 @Slf4j
@@ -79,6 +81,11 @@ public class GraphQLController {
         log.info("GraphQL Ingress: Retrieving property: {}", id);
         return propertyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Property not found."));
+    }
+
+    @QueryMapping
+    public Landlord getLandlord(@Argument String email) {
+        return landlordRepository.findByEmail(email).orElse(null);
     }
 
     @QueryMapping
@@ -293,8 +300,12 @@ public class GraphQLController {
     }
 
     @MutationMapping
-    @Transactional
-    public EscrowTransaction releaseEscrow(@Argument UUID id) {
+    public Mono<EscrowTransaction> releaseEscrow(@Argument UUID id) {
+        return Mono.fromCallable(() -> releaseEscrowBlocking(id))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private EscrowTransaction releaseEscrowBlocking(UUID id) {
         EscrowTransaction escrow = escrowTransactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Escrow transaction not found."));
         if (!"HELD".equalsIgnoreCase(escrow.getStatus()) && !"PAYOUT_FAILED".equalsIgnoreCase(escrow.getStatus())) {

@@ -186,8 +186,6 @@ export default function App() {
   const [payoutAcctNumber, setPayoutAcctNumber] = useState('');
   const [payoutVerifiedName, setPayoutVerifiedName] = useState('');
   const [payoutVerifying, setPayoutVerifying] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState('');
-  const [payoutResult, setPayoutResult] = useState(null);
 
   // FX Conversion Sub-states
   const [fxAmount, setFxAmount] = useState('50000');
@@ -371,9 +369,19 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
   }
 
+  async function loadSavedPayoutAccount() {
+    if (!userProfile?.email) return;
+    const data = await fetchGraphQL(`query { getLandlord(email: "${userProfile.email}") { bankAccountNumber bankCode bankAccountName } }`);
+    const landlord = data?.getLandlord;
+    if (landlord?.bankAccountNumber) setPayoutAcctNumber(landlord.bankAccountNumber);
+    if (landlord?.bankCode) setPayoutBankCode(landlord.bankCode);
+    if (landlord?.bankAccountName) setPayoutVerifiedName(landlord.bankAccountName);
+  }
+
   useEffect(() => {
     if (userProfile && userRole === 'landlord' && landlordTab === 'payouts') {
       loadPayoutBanks();
+      loadSavedPayoutAccount();
     }
   }, [userProfile, userRole, landlordTab]);
 
@@ -1137,45 +1145,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setPayoutVerifying(false);
   }
 
-  // Confirm payout transfer
-  async function handleConfirmPayout(e) {
-    e.preventDefault();
-    if (!payoutVerifiedName) {
-      alert("Please verify recipient account coordinates first!");
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await executeNombaApi({
-        name: 'Perform bank account transfer from the sub account',
-        method: 'POST',
-        url: '/v2/transfers/bank',
-        body: {
-          amount: parseFloat(payoutAmount),
-          accountNumber: payoutAcctNumber,
-          accountName: payoutVerifiedName,
-          bankCode: payoutBankCode,
-          merchantTxRef: "UNQ_" + Math.random().toString(36).substring(2, 10),
-          senderName: userProfile?.name || userProfile?.email || "AcreWise",
-          narration: "AcreWise Rent Payout"
-        }
-      });
-      setPayoutResult(data);
-
-      // Save Receipt
-      const transferId = data.data?.id || data.data?.merchantTxRef || data.data?.transactionId || `payout_${Date.now()}`;
-      await saveReceipt("Bank Transfer Payout", "RENT", parseFloat(payoutAmount), transferId, `Transfer of ₦${payoutAmount} to ${payoutVerifiedName}`);
-
-      alert(`Transfer submitted. Ref: ${transferId}. Status: ${data.data?.status || data.description}`);
-      setPayoutAmount('');
-      setPayoutAcctNumber('');
-      setPayoutVerifiedName('');
-    } catch (err) {
-      alert(`Transfer failed: ${err.message}`);
-    }
-    setLoading(false);
-  }
-
   // FX Convert rates lookup
   async function handleFxConvert() {
     setLoading(true);
@@ -1272,12 +1241,52 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  tenantEmail: "${userProfile.email}"
  ) {
  id
+ title
+ category
+ amount
+ reference
+ details
+ tenantEmail
+ createdAt
  }
  }
  `;
     const data = await fetchGraphQL(mutation, {}, { throwOnError: true });
     await loadReceipts();
-    return data?.createReceipt || null;
+    const receipt = data?.createReceipt || null;
+    if (receipt) setSelectedReceipt(receipt);
+    return receipt;
+  }
+
+  function receiptSvgText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[character]));
+  }
+
+  function downloadReceiptImage(receipt) {
+    const amount = Number(receipt?.amount || 0).toLocaleString();
+    const lines = [
+      'ACREWISE TRANSACTION RECEIPT',
+      receipt?.title || 'Payment Receipt',
+      `Category: ${receipt?.category || ''}`,
+      `Amount: NGN ${amount}`,
+      `Reference: ${receipt?.reference || ''}`,
+      `Holder: ${receipt?.tenantEmail || userProfile?.email || ''}`,
+      `Date: ${receipt?.createdAt ? new Date(receipt.createdAt).toLocaleString() : new Date().toLocaleString()}`
+    ];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560"><rect width="100%" height="100%" fill="#f8fafc"/><rect x="40" y="40" width="820" height="480" rx="12" fill="#ffffff" stroke="#cbd5e1"/><text x="80" y="105" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#0f172a">${receiptSvgText(lines[0])}</text>${lines.slice(1).map((line, index) => `<text x="80" y="${165 + index * 48}" font-family="Arial,sans-serif" font-size="22" fill="#334155">${receiptSvgText(line)}</text>`).join('')}</svg>`;
+    const link = document.createElement('a');
+    link.href = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    link.download = `acrewise-receipt-${receipt?.reference || Date.now()}.svg`;
+    link.click();
+  }
+
+  function printReceipt(receipt) {
+    const popup = window.open('', '_blank', 'width=720,height=800');
+    if (!popup) return;
+    popup.document.write(`<!doctype html><html><head><title>AcreWise Receipt</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#0f172a}h1{font-size:22px;border-bottom:1px solid #cbd5e1;padding-bottom:16px}p{font-size:15px;border-bottom:1px solid #e2e8f0;padding:12px 0}strong{display:inline-block;width:130px;color:#64748b}</style></head><body><h1>ACREWISE TRANSACTION RECEIPT</h1><p><strong>Title</strong>${receiptSvgText(receipt?.title || 'Payment Receipt')}</p><p><strong>Category</strong>${receiptSvgText(receipt?.category || '')}</p><p><strong>Amount</strong>NGN ${Number(receipt?.amount || 0).toLocaleString()}</p><p><strong>Reference</strong>${receiptSvgText(receipt?.reference || '')}</p><p><strong>Holder</strong>${receiptSvgText(receipt?.tenantEmail || userProfile?.email || '')}</p><p><strong>Date</strong>${receiptSvgText(receipt?.createdAt ? new Date(receipt.createdAt).toLocaleString() : new Date().toLocaleString())}</p><p><strong>Details</strong>${receiptSvgText(receipt?.details || '')}</p></body></html>`);
+    popup.document.close();
+    popup.focus();
+    popup.print();
   }
 
   // Vend electricity tokens
@@ -2913,7 +2922,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                 <div className="space-y-8">
                   <div>
                     <h2 className="text-2xl font-bold">Payouts, FX & Utility Services</h2>
-                    <p className="text-gray-500 text-sm mt-1">Verify landlord accounts, perform payouts, swap currencies via exchange rates, and vend property utility meters.</p>
+                    <p className="text-gray-500 text-sm mt-1">Register the landlord payout account, swap currencies via exchange rates, and vend property utility meters.</p>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -2921,10 +2930,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <div className="p-6 border border-gray-200 bg-white shadow-sm border border-gray-200/10 rounded-lg space-y-4">
                       <div className="flex items-center gap-2 border-b border-gray-200 pb-3">
                         <ArrowLeftRight className="w-5 h-5 text-slate-700" />
-                        <h3 className="font-bold text-sm text-gray-900">Bank Payout (Subaccount)</h3>
+                        <h3 className="font-bold text-sm text-gray-900">Registered Payout Account</h3>
                       </div>
 
-                      <form onSubmit={handleConfirmPayout} className="space-y-3 font-mono text-xs">
+                      <div className="space-y-3 font-mono text-xs">
                         <div className="space-y-1">
                           <label className="text-[9px] text-gray-400">SELECT RECIPIENT BANK</label>
                           <select
@@ -2967,25 +2976,12 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           </div>
                         )}
 
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-gray-400">AMOUNT (NGN)</label>
-                          <input
-                            type="number"
-                            placeholder="Amount in NGN"
-                            className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
-                            value={payoutAmount}
-                            onChange={(e) => setPayoutAmount(e.target.value)}
-                            required
-                          />
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full py-2 bg-slate-900 text-white font-bold rounded transition"
-                        >
-                          Execute Bank Payout
-                        </button>
-                      </form>
+                        {payoutVerifiedName && (
+                          <div className="p-3 bg-slate-50 border border-gray-200 rounded text-[10px] text-gray-600 leading-relaxed">
+                            This account is saved for this landlord. Purchase escrow releases will use it automatically; you do not need to enter a payout amount here.
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Section B: Forex exchange */}
@@ -4610,17 +4606,24 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
             </div>
 
             {/* Receipt Footer Buttons */}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => alert("Simulating PDF Download...")}
+                onClick={() => downloadReceiptImage(selectedReceipt)}
                 className="flex-1 py-2 bg-slate-900 text-white font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 font-sans"
               >
                 <Download className="w-4 h-4" />
-                Download PDF
+                Save Image
+              </button>
+              <button
+                onClick={() => printReceipt(selectedReceipt)}
+                className="flex-1 py-2 bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 font-sans"
+              >
+                <FileText className="w-4 h-4" />
+                Print / PDF
               </button>
               <button
                 onClick={() => setSelectedReceipt(null)}
-                className="flex-1 py-2 bg-white shadow-sm border border-gray-200 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs uppercase tracking-wider rounded transition font-sans"
+                className="col-span-2 py-2 bg-white shadow-sm border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs uppercase tracking-wider rounded transition font-sans"
               >
                 Close Slip
               </button>
