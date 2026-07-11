@@ -32,6 +32,9 @@ public class Landlord {
     @Column(name = "bank_code")
     private String bankCode;
 
+    @Column(name = "bank_account_name")
+    private String bankAccountName;
+
     @Column(name = "created_at")
     private Instant createdAt;
 

@@ -7,6 +7,8 @@ import com.acrewise.land.repository.EscrowTransactionRepository;
 import com.acrewise.land.repository.RentPaymentRepository;
 import com.acrewise.land.repository.TenancyRepository;
 import com.acrewise.land.repository.PropertyRepository;
+import com.acrewise.land.repository.ReceiptRepository;
+import com.acrewise.land.domain.Receipt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class ReconciliationEngine {
     private final RentPaymentRepository rentPaymentRepository;
     private final EscrowTransactionRepository escrowTransactionRepository;
     private final PropertyRepository propertyRepository;
+    private final ReceiptRepository receiptRepository;
     private final RedisLockService lockService;
 
     /**
@@ -102,6 +105,14 @@ public class ReconciliationEngine {
                         .build();
 
                 rentPaymentRepository.save(payment);
+                createReceiptIfMissing(
+                        "Rent Payment",
+                        "RENT",
+                        amount,
+                        nombaReference,
+                        "Nomba payment reconciled for " + tenancy.getProperty().getTitle(),
+                        tenancy.getTenantId()
+                );
                 return matchedStatus;
             }
 
@@ -129,6 +140,16 @@ public class ReconciliationEngine {
                         .build();
                 rentPaymentRepository.save(payment);
                 escrowTransactionRepository.save(escrow);
+                if (comparison >= 0) {
+                    createReceiptIfMissing(
+                            "House Purchase Escrow Deposit",
+                            "PURCHASE",
+                            amount,
+                            nombaReference,
+                            "Nomba payment held for " + escrow.getProperty().getTitle() + ". Funds are pending landlord release.",
+                            escrow.getBuyerId()
+                    );
+                }
                 log.info("Reconciliation Engine: Escrow payment [{}] processed as {} for transaction [{}], property [{}]",
                         nombaReference, matchedStatus,
                         escrow.getId(), escrow.getProperty().getId());
@@ -163,5 +184,20 @@ public class ReconciliationEngine {
             case "ANNUAL", "YEARLY" -> currentDate.plusYears(1);
             default -> currentDate.plusMonths(1); // Defaults to monthly
         };
+    }
+
+    private void createReceiptIfMissing(String title, String category, BigDecimal amount,
+                                        String reference, String details, String tenantEmail) {
+        if (reference == null || reference.isBlank() || tenantEmail == null || tenantEmail.isBlank()) return;
+        if (receiptRepository.findByReference(reference).isEmpty()) {
+            receiptRepository.save(Receipt.builder()
+                    .title(title)
+                    .category(category)
+                    .amount(amount)
+                    .reference(reference)
+                    .details(details)
+                    .tenantEmail(tenantEmail)
+                    .build());
+        }
     }
 }

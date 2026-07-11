@@ -150,6 +150,7 @@ export default function App() {
   const [isPaying, setIsPaying] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // null, redirecting, verifying, success, error
   const [checkoutOrderRef, setCheckoutOrderRef] = useState('');
+  const [checkoutReceipt, setCheckoutReceipt] = useState(null);
 
   useEffect(() => {
     if (window.location.pathname !== '/checkout/complete') return;
@@ -473,6 +474,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       }
       return result.data;
     } catch (err) {
+      if (options.throwOnError) throw err;
       console.error("GraphQL network error:", err);
       return null;
     }
@@ -544,6 +546,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  nombaVirtualAccountId
  nombaOrderReference
  nombaTransactionReference
+ nombaPayoutReference
  property {
  id
  title
@@ -577,10 +580,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
 
   // Load Receipts & Chats
   useEffect(() => {
-    if (userProfile && tenantTab === 'receipts') {
+    if (userProfile && (tenantTab === 'receipts' || landlordTab === 'receipts')) {
       loadReceipts();
     }
-  }, [userProfile, tenantTab]);
+  }, [userProfile, tenantTab, landlordTab]);
 
   useEffect(() => {
     if (userProfile) loadWalletBalance();
@@ -1102,7 +1105,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       if (data && data.code === "00") {
         setPayoutVerifiedName(data.data.accountName);
-        await fetchGraphQL(`mutation { updateLandlordPayoutDetails(email: "${userProfile.email}", bankAccountNumber: "${payoutAcctNumber}", bankCode: "${payoutBankCode}") { email } }`);
+        await fetchGraphQL(`mutation { updateLandlordPayoutDetails(email: "${userProfile.email}", bankAccountNumber: "${payoutAcctNumber}", bankCode: "${payoutBankCode}", bankAccountName: "${data.data.accountName}") { email } }`);
       } else {
         alert("Verification failed. Check account credentials.");
       }
@@ -1256,8 +1259,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
  }
  }
  `;
-    await fetchGraphQL(mutation);
+    const data = await fetchGraphQL(mutation, {}, { throwOnError: true });
     await loadReceipts();
+    return data?.createReceipt || null;
   }
 
   // Vend electricity tokens
@@ -1462,6 +1466,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     if (checkoutOption === 'custom') amt = parseFloat(customPayAmount) || 0;
 
     setIsPaying(true);
+    setCheckoutReceipt(null);
 
     const orderRef = "ord_" + Math.random().toString(36).substring(2, 14) + Date.now().toString(36);
     setCheckoutOrderRef(orderRef);
@@ -1516,15 +1521,23 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const data = await res.json();
       const checkoutLink = data?.data?.checkoutLink || data?.data?.checkoutUrl;
       if (res.ok && data?.code === "00" && checkoutLink) {
+        const nombaOrderRef = data?.data?.orderReference || orderRef;
+        setCheckoutOrderRef(nombaOrderRef);
+        if (nombaOrderRef !== orderRef) {
+          const linked = checkoutTenancy.isMarketplacePurchase
+            ? await fetchGraphQL(`mutation { linkEscrowOrder(escrowId: "${preparedCheckoutTenancy.escrowId}", orderReference: "${nombaOrderRef}") { id nombaOrderReference } }`)
+            : await fetchGraphQL(`mutation { linkTenancyOrder(tenancyId: "${preparedCheckoutTenancy.id}", orderReference: "${nombaOrderRef}") { id nombaOrderReference } }`);
+          if (!linked) throw new Error('Could not link the Nomba order reference to this payment record.');
+        }
         if (!checkoutTenancy.isMarketplacePurchase && checkoutTenancy.id) {
-          const linked = await fetchGraphQL(`mutation { linkTenancyOrder(tenancyId: "${preparedCheckoutTenancy.id}", orderReference: "${orderRef}") { id nombaOrderReference } }`);
+          const linked = await fetchGraphQL(`mutation { linkTenancyOrder(tenancyId: "${preparedCheckoutTenancy.id}", orderReference: "${nombaOrderRef}") { id nombaOrderReference } }`);
           if (!linked?.linkTenancyOrder) {
             throw new Error('Could not link the Nomba order to this lease agreement.');
           }
         }
         sessionStorage.setItem('acrewise_pending_checkout', JSON.stringify({
           checkoutTenancy: preparedCheckoutTenancy,
-          checkoutOrderRef: orderRef,
+          checkoutOrderRef: nombaOrderRef,
           userProfile,
           userRole
         }));
@@ -1558,33 +1571,43 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         body: JSON.stringify({
           name: orderSpec.name,
           method: "GET",
-          url: `/v1/checkout/order/${checkoutOrderRef}`,
+          url: `/v1/transactions/accounts/single?orderReference=${encodeURIComponent(checkoutOrderRef)}`,
           body: {},
         })
       });
       const data = await res.json();
       const orderStatus = data?.data?.status || data?.data?.order?.status || data?.data?.order?.paymentStatus;
-      if (data?.code === "00" && ['PAID', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED'].includes(String(orderStatus).toUpperCase())) {
-        setPaymentStatus('success');
+      const paymentMessage = data?.data?.gatewayMessage || data?.data?.message || data?.description;
+      const isPaid = ['PAID', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED', 'SETTLED', 'CAPTURED'].includes(String(orderStatus).trim().toUpperCase())
+        || data?.data?.success === true
+        || String(paymentMessage).toUpperCase().includes('PAYMENT SUCCESSFUL');
+      if (data?.code === "00" && isPaid) {
         if (checkoutTenancy.isMarketplacePurchase) {
           await handleMarketplaceCheckout(checkoutTenancy.property, checkoutOrderRef);
         } else {
           // The signed Nomba webhook is the source of reconciliation truth.
           // Never fabricate a webhook from the browser after checkout.
           await loadData();
-          await saveReceipt(
+          const receipt = await saveReceipt(
             "Rent Payment",
             "RENT",
             amt,
             checkoutOrderRef,
             `Nomba checkout payment confirmed for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}`
           );
+          setCheckoutReceipt(receipt || {
+            title: 'Rent Payment', category: 'RENT', amount: amt,
+            reference: checkoutOrderRef,
+            details: `Nomba checkout payment confirmed for ${checkoutTenancy.property?.title || checkoutTenancy.nombaVirtualAccountId}`
+          });
         }
+        setPaymentStatus('success');
         sessionStorage.removeItem('acrewise_pending_checkout');
       } else {
         alert("Payment has not been confirmed yet. Please try again or check your Nomba transaction history.");
       }
     } catch (err) {
+      setPaymentStatus('error');
       alert("Could not verify order status. Please check your Nomba transaction history.");
     }
     setIsPaying(false);
@@ -1601,13 +1624,20 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
           throw new Error('Nomba confirmed the checkout, but the escrow payment is not held yet. Use Sync Payment from Purchase Escrows.');
         }
       }
-      await saveReceipt(
+      const receipt = await saveReceipt(
         propObj.type === 'SALE' ? 'House Purchase Escrow Deposit' : 'Rent First Payment',
         propObj.type === 'SALE' ? 'PURCHASE' : 'RENT',
         checkoutTenancy.rentAmount,
         orderReference,
         `Nomba checkout payment confirmed for ${propObj.title}.`
       );
+      setCheckoutReceipt(receipt || {
+        title: propObj.type === 'SALE' ? 'House Purchase Escrow Deposit' : 'Rent First Payment',
+        category: propObj.type === 'SALE' ? 'PURCHASE' : 'RENT',
+        amount: checkoutTenancy.rentAmount,
+        reference: orderReference,
+        details: `Nomba checkout payment confirmed for ${propObj.title}.`
+      });
       await loadData();
       alert(`Checkout Completed! ${propObj.type === 'SALE' ? 'Purchase escrow is now awaiting handover.' : 'Lease agreement is active.'}`);
       return;
@@ -1689,16 +1719,20 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     setEscrowActionLoading(txn.id);
     try {
       if (action === 'release') {
-        const result = await fetchGraphQL(`mutation { releaseEscrow(id: "${txn.id}") { id status releasedAt nombaTransactionReference } }`);
+        const result = await fetchGraphQL(`mutation { releaseEscrow(id: "${txn.id}") { id status releasedAt nombaTransactionReference nombaPayoutReference } }`);
         if (!result?.releaseEscrow) throw new Error('Escrow release was not confirmed by the server.');
-        await saveReceipt(
-          "Escrow Funds Released",
-          "PURCHASE",
-          txn.amountHeld,
-          result.releaseEscrow.nombaTransactionReference || txn.nombaOrderReference || txn.id,
-          `Escrow released for: ${txn.property.title}. Buyer: ${txn.buyerId}. Nomba transfer confirmed.`
-        );
-        alert(`Escrow released. ₦${txn.amountHeld.toLocaleString()} was sent through Nomba.`);
+        if (result.releaseEscrow.status === 'RELEASE_PENDING') {
+          alert(`Nomba accepted the payout for processing. Reference: ${result.releaseEscrow.nombaPayoutReference || 'pending'}. The escrow will update automatically when the bank transfer completes.`);
+        } else {
+          await saveReceipt(
+            "Escrow Funds Released",
+            "PURCHASE",
+            txn.amountHeld,
+            result.releaseEscrow.nombaPayoutReference || txn.nombaOrderReference || txn.id,
+            `Escrow released for: ${txn.property.title}. Buyer: ${txn.buyerId}. Nomba transfer confirmed.`
+          );
+          alert(`Escrow released. ₦${txn.amountHeld.toLocaleString()} was sent through Nomba.`);
+        }
       } else {
         const result = await fetchGraphQL(`mutation { rejectEscrow(id: "${txn.id}") { id status } }`);
         if (!result?.rejectEscrow) throw new Error('Escrow rejection was not confirmed by the server.');
@@ -2172,6 +2206,13 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     Payouts & Utilities
                   </button>
                   <button
+                    onClick={() => setLandlordTab('receipts')}
+                    className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'receipts' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
+                  >
+                    <Receipt className="w-4 h-4" />
+                    Receipts Locker
+                  </button>
+                  <button
                     onClick={() => setLandlordTab('terminals')}
                     className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2.5 transition font-medium ${landlordTab === 'terminals' ? 'bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 '}`}
                   >
@@ -2613,6 +2654,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                       const statusColors = {
                         HELD: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
                         PENDING_PAYMENT: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                        RELEASE_PENDING: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
                         RELEASED: 'bg-slate-800/10 text-slate-700 border-slate-300',
                         REFUNDED: 'bg-red-500/10 text-red-400 border-red-500/20',
                       };
@@ -2683,6 +2725,11 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             {e.status === 'RELEASED' && (
                               <div className="flex items-center gap-1.5 text-slate-700 text-xs font-mono">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Funds disbursed — property sold
+                              </div>
+                            )}
+                            {e.status === 'RELEASE_PENDING' && (
+                              <div className="flex items-center gap-1.5 text-violet-500 text-xs font-mono">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Payout accepted by Nomba — awaiting bank completion
                               </div>
                             )}
                             {e.status === 'REFUNDED' && (
@@ -3327,6 +3374,35 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         </form>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Landlord Tab: Receipts Locker */}
+              {landlordTab === 'receipts' && (
+                <div className="space-y-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold">Receipts Locker</h3>
+                      <p className="text-gray-500 text-sm mt-1">Receipts for payouts and payments linked to this account.</p>
+                    </div>
+                    <button type="button" onClick={loadReceipts} className="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                      <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {userReceipts.map(rec => (
+                      <div key={rec.id} onClick={() => setSelectedReceipt(rec)} className="p-5 border border-gray-200 bg-white hover:border-gray-300 rounded-lg cursor-pointer space-y-3 font-mono text-xs text-left transition">
+                        <div className="flex justify-between items-center">
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-800/10 text-slate-700">{rec.category}</span>
+                          <span className="text-gray-400 text-[10px]">{new Date(rec.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-sm truncate">{rec.title}</h4>
+                        <div className="flex justify-between items-baseline pt-1"><span className="text-gray-400 text-[9px]">Amount</span><span className="text-gray-900 font-bold text-base">₦{Number(rec.amount).toLocaleString()}</span></div>
+                        <p className="text-gray-400 text-[9px] truncate">Ref: {rec.reference}</p>
+                      </div>
+                    ))}
+                    {userReceipts.length === 0 && <div className="py-20 text-center text-zinc-600 lg:col-span-3">No receipts found for this account.</div>}
                   </div>
                 </div>
               )}
@@ -4103,6 +4179,15 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     <h4 className="font-bold text-gray-900 text-base">Payment Approved</h4>
                     <p className="text-gray-400 text-xs">Reconciliation Engine Completed Execution.</p>
                   </div>
+                  {checkoutReceipt && (
+                    <div className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg space-y-2 text-xs">
+                      <div className="flex items-center gap-2 text-slate-700 font-bold"><Receipt className="w-4 h-4" /> Receipt</div>
+                      <p className="text-gray-700 font-semibold">{checkoutReceipt.title}</p>
+                      <div className="flex justify-between text-gray-500"><span>Amount</span><span className="font-bold text-gray-900">₦{Number(checkoutReceipt.amount || 0).toLocaleString()}</span></div>
+                      <div className="flex justify-between gap-3 text-gray-500"><span>Reference</span><span className="font-mono text-gray-700 truncate">{checkoutReceipt.reference}</span></div>
+                      <button type="button" onClick={() => { setShowCheckout(false); setTenantTab('receipts'); }} className="w-full mt-2 py-2 border border-gray-200 rounded text-xs font-semibold text-gray-700 hover:bg-gray-50">Open Receipts Locker</button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="py-8 flex flex-col items-center text-center space-y-4">
