@@ -390,7 +390,7 @@ public class GraphQLController {
                         if ("RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus())) {
                             synchronizePendingPayout(escrow);
                         } else {
-                            synchronizeEscrowPayment(escrow.getId());
+                            synchronizeEscrowPaymentBlocking(escrow.getId());
                         }
                     } catch (Exception error) {
                         log.debug("Pending escrow {} is not paid yet or could not be synchronized: {}", escrow.getId(), error.getMessage());
@@ -436,8 +436,12 @@ public class GraphQLController {
     }
 
     @MutationMapping
-    @Transactional
-    public EscrowTransaction synchronizeEscrowPayment(@Argument UUID id) {
+    public Mono<EscrowTransaction> synchronizeEscrowPayment(@Argument UUID id) {
+        return Mono.fromCallable(() -> synchronizeEscrowPaymentBlocking(id))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private EscrowTransaction synchronizeEscrowPaymentBlocking(UUID id) {
         EscrowTransaction escrow = escrowTransactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Escrow transaction not found."));
         if ("HELD".equalsIgnoreCase(escrow.getStatus())) {
@@ -499,7 +503,7 @@ public class GraphQLController {
         createPaymentReceiptIfMissing(
                 "House Purchase Escrow Deposit",
                 "PURCHASE",
-                escrow.getAmountHeld(),
+                chargedAmount != null ? chargedAmount : escrow.getAmountHeld(),
                 escrow.getNombaOrderReference(),
                 "Nomba payment confirmed for " + escrow.getProperty().getTitle() + ". Funds are held pending landlord release.",
                 escrow.getBuyerId()
