@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/nomba-sandbox")
@@ -110,12 +111,11 @@ public class NombaSandboxController {
                     nombaResponse = wcre.getResponseBodyAsString();
                 }
                 log.error("Nomba API call failed for {} ({} {}): {} | body: {}", requestName, requestMethod, requestUrl, err.getMessage(), nombaResponse);
-                return Mono.just(ResponseEntity.ok(Map.of(
-                    "code", "99",
-                    "description", "Payment gateway unavailable: " + nombaResponse,
-                    "rawError", nombaResponse,
-                    "data", null
-                )));
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("code", "99");
+                errorResponse.put("description", "Payment gateway unavailable: " + nombaResponse);
+                errorResponse.put("rawError", nombaResponse);
+                return Mono.just(ResponseEntity.ok(errorResponse));
             });
     }
 }
