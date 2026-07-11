@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -33,6 +34,9 @@ public class ReconciliationEngine {
     private final PropertyRepository propertyRepository;
     private final ReceiptRepository receiptRepository;
     private final RedisLockService lockService;
+
+    @Value("${nomba.api.checkout-fee:1.4}")
+    private BigDecimal checkoutFee;
 
     /**
      * Reactively processes the inbound webhook payment.
@@ -71,9 +75,10 @@ public class ReconciliationEngine {
             if (tenancyOpt.isPresent()) {
                 Tenancy tenancy = tenancyOpt.get();
                 BigDecimal rentDue = tenancy.getRentAmount();
+                BigDecimal creditedAmount = netCheckoutAmount(amount, orderReference, rentDue);
                 String matchedStatus;
 
-                int comparison = amount.compareTo(rentDue);
+                int comparison = creditedAmount.compareTo(rentDue);
                 if (comparison == 0) {
                     // Exact Payment
                     matchedStatus = "MATCHED";
@@ -83,13 +88,13 @@ public class ReconciliationEngine {
                 } else if (comparison < 0) {
                     // Partial Payment (Underpaid)
                     matchedStatus = "UNDERPAID";
-                    BigDecimal arrears = amount.subtract(rentDue); // negative value represent arrears/shortfall
+                    BigDecimal arrears = creditedAmount.subtract(rentDue); // negative value represent arrears/shortfall
                     tenancy.setBalance(arrears);
                     log.warn("Reconciliation Engine: UNDERPAYMENT detected for tenancy [{}]. Arrears: {}", tenancy.getId(), arrears);
                 } else {
                     // Excess Payment (Overpaid)
                     matchedStatus = "OVERPAID";
-                    BigDecimal credit = amount.subtract(rentDue); // positive credit
+                    BigDecimal credit = creditedAmount.subtract(rentDue); // positive credit
                     tenancy.setBalance(credit);
                     log.info("Reconciliation Engine: OVERPAYMENT detected for tenancy [{}]. Credit: {}", tenancy.getId(), credit);
                 }
@@ -123,7 +128,8 @@ public class ReconciliationEngine {
             }
             if (escrowOpt.isPresent()) {
                 EscrowTransaction escrow = escrowOpt.get();
-                int comparison = amount.compareTo(escrow.getAmountHeld());
+                BigDecimal creditedAmount = netCheckoutAmount(amount, orderReference, escrow.getAmountHeld());
+                int comparison = creditedAmount.compareTo(escrow.getAmountHeld());
                 String matchedStatus = comparison >= 0 ? "MATCHED" : "UNDERPAID";
                 if (comparison >= 0) {
                     escrow.setStatus("HELD");
@@ -184,6 +190,17 @@ public class ReconciliationEngine {
             case "ANNUAL", "YEARLY" -> currentDate.plusYears(1);
             default -> currentDate.plusMonths(1); // Defaults to monthly
         };
+    }
+
+    private BigDecimal netCheckoutAmount(BigDecimal amount, String orderReference, BigDecimal expectedAmount) {
+        if (orderReference == null || orderReference.isBlank() || checkoutFee == null || checkoutFee.signum() <= 0) {
+            return amount;
+        }
+        // Preserve historical exact payments created before the fee-inclusive checkout flow.
+        if (amount.compareTo(expectedAmount) == 0 || amount.compareTo(checkoutFee) <= 0) {
+            return amount;
+        }
+        return amount.subtract(checkoutFee).max(BigDecimal.ZERO);
     }
 
     private void createReceiptIfMissing(String title, String category, BigDecimal amount,

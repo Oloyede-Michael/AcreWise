@@ -44,6 +44,8 @@ public class NombaSandboxController {
             } else if (url != null && url.startsWith("/v1/transactions/accounts/single")) {
                 url = "/v1/transactions/accounts/" + subAccountId + "/single"
                         + (url.contains("?") ? url.substring(url.indexOf('?')) : "");
+            } else if ("/v1/accounts/balance".equals(url)) {
+                url = "/v1/accounts/" + subAccountId + "/balance";
             }
         }
 
