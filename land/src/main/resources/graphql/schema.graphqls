@@ -5,6 +5,9 @@ type Landlord {
     name: String!
     email: String!
     phone: String!
+    bankAccountNumber: String
+    bankCode: String
+    bankAccountName: String
     createdAt: String
 }
 
@@ -121,6 +124,7 @@ type Query {
     # AcreWise Specific Queries
     getProperties: [Property!]!
     getProperty(id: ID!): Property
+    getLandlord(email: String!): Landlord
     getTenancies: [Tenancy!]!
     getTenancy(id: ID!): Tenancy
     getEscrowTransactions: [EscrowTransaction!]!
