@@ -71,6 +71,7 @@ type EscrowTransaction {
     nombaTransactionReference: String
     nombaPayoutReference: String
     payoutError: String
+    paymentSyncError: String
     releasedAt: String
     createdAt: String
 }
