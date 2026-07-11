@@ -181,11 +181,12 @@ export default function App() {
   // Payouts & Utilities Tab States
   // Payout Sub-states
   const [payoutBankCode, setPayoutBankCode] = useState('058');
+  const [payoutBanks, setPayoutBanks] = useState([]);
+  const [payoutBanksLoading, setPayoutBanksLoading] = useState(false);
   const [payoutAcctNumber, setPayoutAcctNumber] = useState('');
   const [payoutVerifiedName, setPayoutVerifiedName] = useState('');
   const [payoutVerifying, setPayoutVerifying] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
-  const [payoutPin, setPayoutPin] = useState('');
   const [payoutResult, setPayoutResult] = useState(null);
 
   // FX Conversion Sub-states
@@ -347,11 +348,34 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       body: JSON.stringify({ name, method, url, body })
     });
     const data = await res.json();
-    if (!res.ok || data?.code !== '00') {
+    if (!res.ok || !['00', '200', '201'].includes(String(data?.code))) {
       throw new Error(data?.description || `Nomba request failed (${res.status})`);
     }
     return data;
   }
+
+  async function loadPayoutBanks() {
+    setPayoutBanksLoading(true);
+    try {
+      const data = await executeNombaApi({
+        name: 'Fetch bank codes and names',
+        method: 'GET',
+        url: '/v1/transfers/banks'
+      });
+      const banks = Array.isArray(data?.data) ? data.data : (data?.data?.results || []);
+      setPayoutBanks(banks.filter(bank => bank?.code && bank?.name).sort((a, b) => a.name.localeCompare(b.name)));
+    } catch (err) {
+      setPayoutBanks([]);
+    } finally {
+      setPayoutBanksLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (userProfile && userRole === 'landlord' && landlordTab === 'payouts') {
+      loadPayoutBanks();
+    }
+  }, [userProfile, userRole, landlordTab]);
 
   async function provisionNombaVirtualAccount(accountName, accountRef) {
     const data = await executeNombaApi({
@@ -1087,31 +1111,28 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     }
     setPayoutVerifying(true);
     setPayoutVerifiedName('');
-    const lookupSpec = APIS_METADATA.find(a => a.name === "Perform bank account lookup");
-
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      const data = await executeNombaApi({
+        name: 'Perform bank account lookup',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: lookupSpec.name,
-          method: lookupSpec.method,
-          url: lookupSpec.url,
-          body: {
-            accountNumber: payoutAcctNumber,
-            bankCode: payoutBankCode
-          },
-        })
+        url: '/v1/transfers/bank/lookup',
+        body: {
+          accountNumber: payoutAcctNumber,
+          bankCode: payoutBankCode
+        }
       });
-      const data = await res.json();
-      if (data && data.code === "00") {
-        setPayoutVerifiedName(data.data.accountName);
-        await fetchGraphQL(`mutation { updateLandlordPayoutDetails(email: "${userProfile.email}", bankAccountNumber: "${payoutAcctNumber}", bankCode: "${payoutBankCode}", bankAccountName: "${data.data.accountName}") { email } }`);
-      } else {
-        alert("Verification failed. Check account credentials.");
-      }
+      const accountName = data?.data?.accountName;
+      if (!accountName) throw new Error('Nomba did not return an account name.');
+      await fetchGraphQL(
+        `mutation UpdatePayout($email: String!, $accountNumber: String!, $bankCode: String!, $accountName: String) {
+          updateLandlordPayoutDetails(email: $email, bankAccountNumber: $accountNumber, bankCode: $bankCode, bankAccountName: $accountName) { email }
+        }`,
+        { email: userProfile.email, accountNumber: payoutAcctNumber, bankCode: payoutBankCode, accountName },
+        { throwOnError: true }
+      );
+      setPayoutVerifiedName(accountName);
     } catch (err) {
-      alert("Lookup lookup failed.");
+      alert(`Bank lookup failed: ${err.message}`);
     }
     setPayoutVerifying(false);
   }
@@ -1124,39 +1145,33 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       return;
     }
     setLoading(true);
-    const transferSpec = APIS_METADATA.find(a => a.name === "Perform bank account transfer from the sub account");
-
     try {
-      const res = await fetch(API_BASE + '/api/nomba-sandbox/execute', {
+      const data = await executeNombaApi({
+        name: 'Perform bank account transfer from the sub account',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: transferSpec.name,
-          method: transferSpec.method,
-          url: CONFIG.subAccountId ? `/v2/transfers/bank/${CONFIG.subAccountId}` : '/v2/transfers/bank',
-          body: {
-            amount: parseFloat(payoutAmount),
-            accountNumber: payoutAcctNumber,
-            accountName: payoutVerifiedName,
-            bankCode: payoutBankCode,
-            merchantTxRef: "UNQ_" + Math.random().toString(36).substring(2, 10),
-            senderName: userProfile?.name || userProfile?.email || "AcreWise",
-            narration: "AcreWise Rent Payout"
-          },
-        })
+        url: '/v2/transfers/bank',
+        body: {
+          amount: parseFloat(payoutAmount),
+          accountNumber: payoutAcctNumber,
+          accountName: payoutVerifiedName,
+          bankCode: payoutBankCode,
+          merchantTxRef: "UNQ_" + Math.random().toString(36).substring(2, 10),
+          senderName: userProfile?.name || userProfile?.email || "AcreWise",
+          narration: "AcreWise Rent Payout"
+        }
       });
-      const data = await res.json();
       setPayoutResult(data);
 
       // Save Receipt
-      await saveReceipt("Bank Transfer Payout", "RENT", parseFloat(payoutAmount), data.data.id || "tx_payout", `Transfer of ₦${payoutAmount} to ${payoutVerifiedName}`);
+      const transferId = data.data?.id || data.data?.merchantTxRef || data.data?.transactionId || `payout_${Date.now()}`;
+      await saveReceipt("Bank Transfer Payout", "RENT", parseFloat(payoutAmount), transferId, `Transfer of ₦${payoutAmount} to ${payoutVerifiedName}`);
 
-      alert(`Transfer Completed! Ref: ${data.data.id}. Status: ${data.description}`);
+      alert(`Transfer submitted. Ref: ${transferId}. Status: ${data.data?.status || data.description}`);
       setPayoutAmount('');
       setPayoutAcctNumber('');
       setPayoutVerifiedName('');
     } catch (err) {
-      alert("Transfer failed.");
+      alert(`Transfer failed: ${err.message}`);
     }
     setLoading(false);
   }
@@ -2917,9 +2932,10 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             value={payoutBankCode}
                             onChange={(e) => setPayoutBankCode(e.target.value)}
                           >
-                            <option value="058">Guaranty Trust Bank (058)</option>
-                            <option value="011">First Bank of Nigeria (011)</option>
-                            <option value="053">Nombank MFB (053)</option>
+                            <option value="">{payoutBanksLoading ? 'Loading supported banks...' : payoutBanks.length ? 'Select a bank' : 'Bank list unavailable'}</option>
+                            {payoutBanks.map(bank => (
+                              <option key={`${bank.code}-${bank.name}`} value={String(bank.code).trim()}>{bank.name.trim()} ({String(bank.code).trim()})</option>
+                            ))}
                           </select>
                         </div>
 
@@ -2959,19 +2975,6 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                             className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
                             value={payoutAmount}
                             onChange={(e) => setPayoutAmount(e.target.value)}
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-gray-400">SECURITY PIN (4 DIGITS)</label>
-                          <input
-                            type="password"
-                            placeholder="••••"
-                            maxLength={4}
-                            className="w-full bg-slate-50 border border-gray-200 p-2 rounded focus:outline-none text-xs"
-                            value={payoutPin}
-                            onChange={(e) => setPayoutPin(e.target.value)}
                             required
                           />
                         </div>
