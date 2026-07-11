@@ -388,17 +388,23 @@ public class GraphQLController {
                 ? (Map) response.get("data") : response;
         Map order = data != null && data.get("order") instanceof Map
                 ? (Map) data.get("order") : data;
-        String status = firstString(data, "status", "paymentStatus");
+        String status = firstString(data, "status", "paymentStatus", "orderStatus", "paymentState", "state");
         if (status == null && order != null) {
-            status = firstString(order, "status", "paymentStatus");
+            status = firstString(order, "status", "paymentStatus", "orderStatus", "paymentState", "state");
+        }
+        if (status == null && data != null && data.get("transaction") instanceof Map) {
+            status = firstString((Map) data.get("transaction"), "status", "paymentStatus", "state");
         }
         if (!isPaidStatus(status)) {
             throw new IllegalStateException("Nomba order is not confirmed as paid. Current status: " + status);
         }
 
-        String transactionReference = firstString(data, "transactionId", "transactionReference", "id");
+        String transactionReference = firstString(data, "transactionId", "transactionReference");
         if (transactionReference == null && order != null) {
-            transactionReference = firstString(order, "transactionId", "transactionReference", "id");
+            transactionReference = firstString(order, "transactionId", "transactionReference");
+        }
+        if (transactionReference == null && data != null && data.get("transaction") instanceof Map) {
+            transactionReference = firstString((Map) data.get("transaction"), "transactionId", "transactionReference", "id");
         }
         escrow.setNombaTransactionReference(transactionReference);
         escrow.setStatus("HELD");
@@ -408,7 +414,9 @@ public class GraphQLController {
     }
 
     private boolean isPaidStatus(String status) {
-        return status != null && List.of("PAID", "SUCCESS", "SUCCESSFUL", "COMPLETED").contains(status.toUpperCase());
+        if (status == null) return false;
+        String normalized = status.trim().toUpperCase();
+        return List.of("PAID", "SUCCESS", "SUCCESSFUL", "COMPLETED", "SETTLED", "CAPTURED").contains(normalized);
     }
 
     private String firstString(Map values, String... keys) {
@@ -476,7 +484,7 @@ public class GraphQLController {
 
     @QueryMapping
     public List<Receipt> getReceipts(@Argument String tenantEmail) {
-        return receiptRepository.findByTenantEmailOrderByCreatedAtDesc(tenantEmail);
+        return receiptRepository.findByTenantEmailIgnoreCaseOrderByCreatedAtDesc(tenantEmail);
     }
 
     @MutationMapping

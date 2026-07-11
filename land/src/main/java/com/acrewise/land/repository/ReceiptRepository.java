@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ReceiptRepository extends JpaRepository<Receipt, UUID> {
-    List<Receipt> findByTenantEmailOrderByCreatedAtDesc(String tenantEmail);
+    List<Receipt> findByTenantEmailIgnoreCaseOrderByCreatedAtDesc(String tenantEmail);
 }

@@ -457,7 +457,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   }
 
   // GraphQL Helper
-  async function fetchGraphQL(query, variables = {}) {
+  async function fetchGraphQL(query, variables = {}, options = {}) {
     try {
       const res = await fetch(API_BASE + '/graphql', {
         method: 'POST',
@@ -467,6 +467,9 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       const result = await res.json();
       if (result.errors) {
         console.error("GraphQL errors:", result.errors);
+        if (options.throwOnError) {
+          throw new Error(result.errors.map(error => error.message).join('; '));
+        }
       }
       return result.data;
     } catch (err) {
@@ -1593,7 +1596,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
     try {
     if (checkoutTenancy?.escrowPrepared) {
       if (propObj.type === 'SALE' && checkoutTenancy.escrowId) {
-        const synced = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${checkoutTenancy.escrowId}") { id status } }`);
+        const synced = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${checkoutTenancy.escrowId}") { id status } }`, {}, { throwOnError: true });
         if (!synced?.synchronizeEscrowPayment || synced.synchronizeEscrowPayment.status !== 'HELD') {
           throw new Error('Nomba confirmed the checkout, but the escrow payment is not held yet. Use Sync Payment from Purchase Escrows.');
         }
@@ -1671,7 +1674,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   async function handleSyncEscrowPayment(txn) {
     setEscrowActionLoading(txn.id);
     try {
-      const result = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${txn.id}") { id status nombaTransactionReference } }`);
+      const result = await fetchGraphQL(`mutation { synchronizeEscrowPayment(id: "${txn.id}") { id status nombaTransactionReference } }`, {}, { throwOnError: true });
       if (!result?.synchronizeEscrowPayment) throw new Error('Payment synchronization was not confirmed.');
       await loadData();
       alert('Nomba payment confirmed. The escrow is now held and ready for landlord release.');
