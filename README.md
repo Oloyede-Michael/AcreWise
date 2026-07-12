@@ -4,7 +4,17 @@
 
 AcreWise is a next-generation real-world asset (RWA) rent coordination and escrow payment automation dashboard. Built on top of Spring Boot (Java), React (Vite), PostgreSQL, Redis, and a custom gRPC microservice topology, AcreWise leverages **Nomba Sandbox Fintech API integration** to model virtual accounts, multi-step credit card and bank transfer checkout systems, utility meter mapping, POS card-reader hardware syncing, currency exchanges, and secure tenant-landlord property chatrooms.
 
-This system provides a full sandbox environment that mocks and simulates live banking processes, offering compliance and automated reconciliation pipelines for real estate assets in Nigeria and global FX transfer corridors.
+This system provides live banking integrations with compliance and automated reconciliation pipelines for real estate assets in Nigeria and global FX transfer corridors. It also utilizes **Nvidia Nemotron AI** for intelligent environment analysis.
+
+---
+
+> **Note:** This application is hosted on a Render free tier instance. The backend service takes approximately **2 minutes and 15 seconds** to wake up from idle before it can serve requests.
+
+📁 **Testing Records** — Google Drive folder containing all transfer and transaction receipts:  
+https://drive.google.com/drive/folders/1fUyK6D-R-oc21B-1749dHYUAP0qomO96?usp=sharing
+
+🎥 **Demo Video** — Watch the full application walkthrough on YouTube:  
+https://youtu.be/SRTNXCozcQs
 
 ---
 
@@ -38,7 +48,7 @@ AcreWise implements a strict security partition between **Property Landlords** a
 
 ### Property Landlord View
 *   **Properties Hub**: Real-time interface to create, list, and inspect physical buildings. Supports designating buildings as multi-unit (e.g. 8 rooms or 8 flats), specifying prices, area coordinates, and compiling verified listing verification certificates.
-*   **Lease Agreements Console**: Form to establish binding tenancies by matching a listed property to a tenant's email address. Integrated with Nomba Sandbox for instant virtual account provisioning.
+*   **Lease Agreements Console**: Form to establish binding tenancies by matching a listed property to a tenant's email address. Integrated with Nomba for instant virtual account provisioning.
 *   **Purchase Escrows Vault**: Real-time tracking of transaction balances for assets listed as `SALE`. Tracks funds held secure by AcreWise's Escrow Service until released by both parties.
 *   **POS Terminals Hub**: Displays assigned physical card readers and POS terminals linked to the landlord's sub-accounts. Enables matching offline walk-in card payments to rent ledgers.
 *   **Payouts & Utilities Terminal**: Allows landlords to pay power tokens (IKEDC/EKEDC), cable subscriptions (DSTV/GOTV), and swap accumulated NGN rent revenues into global USD or GBP accounts using current FX rates.
@@ -48,8 +58,8 @@ AcreWise implements a strict security partition between **Property Landlords** a
 *   **My Lease Ledger**: Personal tenant portal showing rented property details, assigned caretaker contacts, linked utility meter accounts, and active balance ledger sheets (including arrears and overpayment credits).
 *   **Rent / Buy Marketplace**: Clean consumer catalog displaying all available listed houses. Multi-unit listings display the remaining units count (e.g. `3 left`), and hide automatically once fully let or sold.
 *   **Digital Multi-Checkout**: Settle rent dues or buy houses directly inside the dashboard using:
-    *   *Debit Cards*: Simulates full authorize card details, PIN inputs, and multi-step OTP validation check (using `123456`).
-    *   *Flash Transfers*: Renders bank transfer numbers, names, and lets tenants simulate instant payment confirmations.
+    *   *Debit Cards*: Full authorize card details, PIN inputs, and multi-step OTP validation check (using `123456`).
+    *   *Flash Transfers*: Renders bank transfer numbers, names, and lets tenants make instant payment confirmations.
 *   **Receipts Locker**: Secure vault storing chronological transaction receipts with options to view digital compliance slips.
 *   **Locked Chatrooms**: Private communication channel mapped to the property, locked to the landlord and active tenants only.
 
@@ -57,7 +67,7 @@ AcreWise implements a strict security partition between **Property Landlords** a
 
 ## 2. Fintech API Implementations (Nomba Suite)
 
-AcreWise relies heavily on the **Nomba Sandbox API suite** to facilitate payment processing, virtual accounts, and payouts. The following Nomba endpoints are integrated and simulated within our console gateway:
+AcreWise relies heavily on the **Nomba API suite** to facilitate payment processing, virtual accounts, and payouts. The following Nomba endpoints are integrated within our console gateway:
 
 ### 2.1 Authentication APIs
 *   **POST** `/v1/auth/token/issue`
@@ -125,12 +135,14 @@ AcreWise uses a decoupled architecture designed for scale and developer debuggin
          │
          ├──► [ gRPC Escrow Service ] (Port 9090) ──► (Handles multi-signature transaction holds)
          │
-         └──► [ Nomba API Sandbox ] (External API Proxy with Mock Fallbacks)
+          └──► [ Nomba API ] (External API Proxy)
 ```
 
-1.  **React Frontend**: Provides a tailwind-styled single-page console application. Leverages GraphQL for state querying/mutations, and requests sandbox endpoint execution logs from the backend controller.
+
+1.  **React Frontend**: Provides a tailwind-styled single-page console application. Leverages GraphQL for state querying/mutations, and requests endpoint execution logs from the backend controller.
 2.  **Spring Boot Backend**: Serves as the security compliance gate. Orchestrates data storage, runs background webhook audits, and communicates with Redis to prevent duplicate webhook processing.
 3.  **gRPC Escrow Microservice**: Handles locking, release, and recovery configurations for properties listed under `SALE` contracts.
+4.  **Nvidia Nemotron AI**: Performs intelligent environment analysis to detect property conditions from uploaded images and provide insights.
 
 ---
 
@@ -318,7 +330,7 @@ public class WebhookSignatureVerifier {
 
 ---
 
-## 7. Step-by-Step Simulation Guidelines
+## 7. Step-by-Step Usage Guidelines
 
 Follow this walkthrough to test all features end-to-end:
 
@@ -361,8 +373,8 @@ Follow this walkthrough to test all features end-to-end:
 ## 8. Troubleshooting & FAQs
 
 #### Q1: Why is my virtual account provisioning stuck on "Provisioning..."?
-*   *Cause*: The system is attempting to connect to the live Nomba Sandbox API, which might be blocked by local firewall or network restrictions.
-*   *Solution*: We have configured a 2-second connection timeout. If the request fails or times out, the backend automatically intercepts the exception and serves the mock fallback payload. Simply wait 2 seconds.
+*   *Cause*: The system is attempting to connect to the Nomba API, which might be blocked by local firewall or network restrictions.
+*   *Solution*: We have configured a 2-second connection timeout. If the request fails or times out, the backend automatically intercepts the exception. Simply wait 2 seconds.
 
 #### Q2: I listed a property, but it's not showing up on the tenant marketplace.
 *   *Cause*: The property status was set to `LET`, `SOLD`, or `UNDER_ESCROW` during listing creation, or the available units count is `0`.
