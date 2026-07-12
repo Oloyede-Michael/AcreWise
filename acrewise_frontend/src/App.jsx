@@ -2703,7 +2703,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                         PENDING_PAYMENT: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
                         RELEASE_PENDING: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
                         PAYOUT_FAILED: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
-                        RELEASED: 'bg-slate-800/10 text-slate-700 border-slate-300',
+                        RELEASED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
                         REFUNDED: 'bg-red-500/10 text-red-400 border-red-500/20',
                       };
                       return (
@@ -2715,7 +2715,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                           <div className="p-5 space-y-4">
                             <div className="flex items-center justify-between">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${statusColors[e.status] || 'bg-gray-100 text-gray-500 border-gray-300'}`}>
-                                {e.status}
+                                {e.status === 'RELEASED' ? 'CONFIRMED AND RECEIVED' : e.status}
                               </span>
                               <span className="text-zinc-600 font-mono text-[10px]">#{e.id.substring(0, 8)}</span>
                             </div>
@@ -2772,8 +2772,8 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                               </div>
                             )}
                             {e.status === 'RELEASED' && (
-                              <div className="flex items-center gap-1.5 text-slate-700 text-xs font-mono">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Funds disbursed — property sold
+                              <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-mono">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed and received — property sold
                               </div>
                             )}
                             {e.status === 'RELEASE_PENDING' && (
