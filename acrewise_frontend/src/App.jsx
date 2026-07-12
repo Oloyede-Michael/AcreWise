@@ -52,7 +52,9 @@ import {
   Download,
   Share2,
   Mail,
-  User
+  User,
+  Menu,
+  X
 } from 'lucide-react';
 
 import { APIS_METADATA } from './apis_metadata';
@@ -69,7 +71,9 @@ const NOMBA_SETTLEMENT_FEE = NOMBA_CHECKOUT_FEE + NOMBA_TRANSFER_FEE;
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing'); // landing, login, dashboard
-  const [userRole, setUserRole] = useState('tenant'); // landlord, tenant (restricted by userProfile.role)
+  const [userRole, _setUserRole] = useState('tenant'); // landlord, tenant (restricted by userProfile.role)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const setUserRole = (role) => { _setUserRole(role); setIsSidebarOpen(false); };
 
   function navigateTo(view, path) {
     if (typeof window !== 'undefined') {
@@ -97,8 +101,10 @@ export default function App() {
   }, []);
 
   // Tab states
-  const [landlordTab, setLandlordTab] = useState('overview'); // overview, properties, leases, escrow, unmatched, payouts, terminals, chat, developer
-  const [tenantTab, setTenantTab] = useState('my-rent'); // my-rent, marketplace, receipts, chat
+  const [landlordTab, _setLandlordTab] = useState('overview'); // overview, properties, leases, escrow, unmatched, payouts, terminals, chat, developer
+  const [tenantTab, _setTenantTab] = useState('my-rent'); // my-rent, marketplace, receipts, chat
+  const setLandlordTab = (tab) => { _setLandlordTab(tab); setIsSidebarOpen(false); };
+  const setTenantTab = (tab) => { _setTenantTab(tab); setIsSidebarOpen(false); };
 
   // Profile Session States
   const [loginEmail, setLoginEmail] = useState('');
@@ -2143,8 +2149,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900 font-sans flex overflow-hidden">
 
+      {/* Left Sidebar Backdrop Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Left Sidebar */}
-      <aside className="w-64 border-r border-gray-200 bg-slate-50 flex flex-col justify-between shrink-0">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-gray-200 bg-slate-50 flex flex-col justify-between shrink-0 transform transition-transform duration-300 md:translate-x-0 md:static ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div>
           {/* Logo Area */}
           <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -2152,7 +2166,16 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               <div className="w-2.5 h-2.5 bg-slate-800 rounded-full"></div>
               ACREWISE
             </div>
-            <span className="px-1.5 py-0.5 border border-slate-300 bg-slate-800/10 text-slate-700 rounded text-[9px] font-mono tracking-widest uppercase">Console</span>
+            <div className="flex items-center gap-2">
+              <span className="px-1.5 py-0.5 border border-slate-300 bg-slate-800/10 text-slate-700 rounded text-[9px] font-mono tracking-widest uppercase">Console</span>
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1 rounded hover:bg-gray-200 text-gray-500 md:hidden"
+                title="Close Menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* User profile session widget */}
@@ -2351,13 +2374,21 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
       {/* Main Content Pane */}
       <main className="flex-1 bg-slate-50 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 border-b border-gray-200 px-8 flex items-center justify-between bg-slate-50/50 backdrop-blur">
-          <div className="flex items-center gap-4 w-96">
+        <header className="h-16 border-b border-gray-200 px-4 md:px-8 flex items-center justify-between bg-slate-50/50 backdrop-blur">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 rounded bg-white border border-gray-200 text-slate-600 hover:bg-slate-100 transition md:hidden"
+              title="Open Menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+            
             {userRole === 'tenant' && (
               <div className="flex items-center gap-2">
-                <label className="text-gray-400 font-mono text-[10px] uppercase">Select Active Tenancy:</label>
+                <label className="text-gray-400 font-mono text-[10px] uppercase hidden sm:inline">Select Active Tenancy:</label>
                 <select
-                  className="bg-white shadow-sm border border-gray-200 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-900"
+                  className="bg-white shadow-sm border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-900 max-w-[150px] sm:max-w-xs"
                   value={selectedTenancyId || ''}
                   onChange={(e) => setSelectedTenancyId(e.target.value)}
                 >
@@ -2389,7 +2420,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
         </header>
 
         {/* Dynamic Inner Layout Body */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
 
           {/* ========================================================== */}
           {/* ROLE: Landlord Views */}
@@ -2506,7 +2537,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               {/* Landlord Tab: Properties */}
               {landlordTab === 'properties' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h3 className="text-lg font-bold">Properties Hub</h3>
                     <button
                       onClick={() => setShowPropertyModal(true)}
@@ -2602,7 +2633,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
               {/* Landlord Tab: Lease Agreements */}
               {landlordTab === 'leases' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h3 className="text-lg font-bold">Lease Agreements</h3>
                     <button
                       onClick={() => {
@@ -2673,7 +2704,7 @@ Respond ONLY with a valid JSON object with exactly these five fields (no markdow
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-bold">Purchase Escrows</h3>
                       <p className="text-gray-500 text-sm mt-1">Buyer secure deposits pending your confirmation.</p>
