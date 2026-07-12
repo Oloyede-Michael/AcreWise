@@ -1,5 +1,7 @@
 # AcreWise: Decentralized Escrow, Rent & Multi-Unit Tenancy Automation Platform
 
+[![AcreWise Console Preview](https://img.youtube.com/vi/SRTNXCozcQs/maxresdefault.jpg)](https://youtu.be/SRTNXCozcQs)
+
 AcreWise is a next-generation real-world asset (RWA) rent coordination and escrow payment automation dashboard. Built on top of Spring Boot (Java), React (Vite), PostgreSQL, Redis, and a custom gRPC microservice topology, AcreWise leverages **Nomba Sandbox Fintech API integration** to model virtual accounts, multi-step credit card and bank transfer checkout systems, utility meter mapping, POS card-reader hardware syncing, currency exchanges, and secure tenant-landlord property chatrooms.
 
 This system provides a full sandbox environment that mocks and simulates live banking processes, offering compliance and automated reconciliation pipelines for real estate assets in Nigeria and global FX transfer corridors.
