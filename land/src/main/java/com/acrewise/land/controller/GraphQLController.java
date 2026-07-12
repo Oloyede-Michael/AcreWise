@@ -322,6 +322,38 @@ public class GraphQLController {
             return escrowTransactionRepository.save(escrow);
         }
 
+        // If we already have a payout reference, check its status on Nomba first to see if it was already successfully processed.
+        if (escrow.getNombaPayoutReference() != null && !escrow.getNombaPayoutReference().isBlank()) {
+            try {
+                String checkUrl = nombaSubAccountId == null || nombaSubAccountId.isBlank()
+                        ? "/v1/transactions/accounts/single?merchantTxRef=" + escrow.getNombaPayoutReference()
+                        : "/v1/transactions/accounts/" + nombaSubAccountId + "/single?merchantTxRef=" + escrow.getNombaPayoutReference();
+                Map checkResponse = nombaAuthService.getAccessToken()
+                        .flatMap(token -> webClient.get()
+                                .uri(checkUrl)
+                                .header("Authorization", "Bearer " + token)
+                                .header("accountId", nombaAccountId)
+                                .retrieve()
+                                .bodyToMono(Map.class))
+                        .block();
+                String transferStatus = nombaTransferStatus(checkResponse);
+                if ("SUCCESS".equalsIgnoreCase(transferStatus)) {
+                    escrow.setStatus("RELEASED");
+                    escrow.setPayoutError(null);
+                    escrow.setReleasedAt(java.time.Instant.now());
+                    escrow.getProperty().setStatus("SOLD");
+                    propertyRepository.save(escrow.getProperty());
+                    return escrowTransactionRepository.save(escrow);
+                } else if ("PENDING_BILLING".equalsIgnoreCase(transferStatus) || "PROCESSING".equalsIgnoreCase(transferStatus)) {
+                    escrow.setStatus("RELEASE_PENDING");
+                    escrow.setPayoutError(null);
+                    return escrowTransactionRepository.save(escrow);
+                }
+            } catch (Exception e) {
+                log.debug("Check of existing payout reference {} failed or transaction not found: {}", escrow.getNombaPayoutReference(), e.getMessage());
+            }
+        }
+
         String transferReference = escrow.getNombaPayoutReference() != null && !escrow.getNombaPayoutReference().isBlank()
                 ? escrow.getNombaPayoutReference()
                 : "acrewise_escrow_" + UUID.randomUUID();
@@ -387,7 +419,8 @@ public class GraphQLController {
                         && escrow.getNombaPayoutReference() != null)))
                 .forEach(escrow -> {
                     try {
-                        if ("RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus())) {
+                        if ("RELEASE_PENDING".equalsIgnoreCase(escrow.getStatus())
+                                || "PAYOUT_FAILED".equalsIgnoreCase(escrow.getStatus())) {
                             synchronizePendingPayout(escrow);
                         } else {
                             synchronizeEscrowPaymentBlocking(escrow.getId());
@@ -454,9 +487,17 @@ public class GraphQLController {
             throw new IllegalStateException("Nomba order reference is missing for this escrow.");
         }
 
+        boolean isUuid = false;
+        try {
+            java.util.UUID.fromString(escrow.getNombaOrderReference());
+            isUuid = true;
+        } catch (IllegalArgumentException e) {
+            // not a UUID
+        }
+
         String statusUrl = nombaSubAccountId == null || nombaSubAccountId.isBlank()
-                ? "/v1/checkout/transaction?idType=ORDER_REFERENCE&id=" + escrow.getNombaOrderReference()
-                : "/v1/transactions/accounts/" + nombaSubAccountId + "/single?orderReference=" + escrow.getNombaOrderReference();
+                ? "/v1/checkout/transaction?idType=" + (isUuid ? "ORDER_ID" : "ORDER_REFERENCE") + "&id=" + escrow.getNombaOrderReference()
+                : "/v1/transactions/accounts/" + nombaSubAccountId + "/single?" + (isUuid ? "orderId" : "orderReference") + "=" + escrow.getNombaOrderReference();
         Map response;
         try {
             response = nombaAuthService.getAccessToken()
@@ -591,16 +632,33 @@ public class GraphQLController {
     }
 
     private void synchronizePendingPayout(EscrowTransaction escrow) {
-        if (escrow.getNombaPayoutReference() == null || nombaSubAccountId == null || nombaSubAccountId.isBlank()) return;
-        Map response = nombaAuthService.getAccessToken()
-                .flatMap(token -> webClient.get()
-                        .uri("/v1/transactions/accounts/" + nombaSubAccountId + "/single?merchantTxRef=" + escrow.getNombaPayoutReference())
-                        .header("Authorization", "Bearer " + token)
-                        .header("accountId", nombaAccountId)
-                        .retrieve()
-                        .bodyToMono(Map.class))
-                .block();
-        if (!"SUCCESS".equalsIgnoreCase(nombaTransferStatus(response))) return;
+        if (escrow.getNombaPayoutReference() == null) return;
+        String statusUrl = nombaSubAccountId == null || nombaSubAccountId.isBlank()
+                ? "/v1/transactions/accounts/single?merchantTxRef=" + escrow.getNombaPayoutReference()
+                : "/v1/transactions/accounts/" + nombaSubAccountId + "/single?merchantTxRef=" + escrow.getNombaPayoutReference();
+        Map response;
+        try {
+            response = nombaAuthService.getAccessToken()
+                    .flatMap(token -> webClient.get()
+                            .uri(statusUrl)
+                            .header("Authorization", "Bearer " + token)
+                            .header("accountId", nombaAccountId)
+                            .retrieve()
+                            .bodyToMono(Map.class))
+                    .block();
+        } catch (Exception e) {
+            log.warn("Failed to synchronize pending payout for escrow {}: {}", escrow.getId(), e.getMessage());
+            return;
+        }
+        String transferStatus = nombaTransferStatus(response);
+        if (!"SUCCESS".equalsIgnoreCase(transferStatus)) {
+            if (transferStatus != null && !"PENDING_BILLING".equalsIgnoreCase(transferStatus) && !"PROCESSING".equalsIgnoreCase(transferStatus)) {
+                escrow.setStatus("PAYOUT_FAILED");
+                escrow.setPayoutError("Nomba transfer status: " + transferStatus);
+                escrowTransactionRepository.save(escrow);
+            }
+            return;
+        }
         escrow.setStatus("RELEASED");
         escrow.setPayoutError(null);
         escrow.setReleasedAt(java.time.Instant.now());
