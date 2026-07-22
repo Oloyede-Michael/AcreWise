@@ -10,9 +10,6 @@ This system provides live banking integrations with compliance and automated rec
 
 > **Note:** This application is hosted on a Render free tier instance. The backend service takes approximately **2 minutes and 15 seconds** to wake up from idle before it can serve requests.
 
-📁 **Testing Records** — Google Drive folder containing all transfer and transaction receipts:  
-https://drive.google.com/drive/folders/1fUyK6D-R-oc21B-1749dHYUAP0qomO96?usp=sharing
-
 🎥 **Demo Video** — Watch the full application walkthrough on YouTube:  
 https://youtu.be/SRTNXCozcQs
 
